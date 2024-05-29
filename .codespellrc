@@ -1,0 +1,6 @@
+[codespell]
+exclude-file = .gitignore
+skip = /tmp/*,*.log,.git,*.png,*.db
+ignore-words-list = ND
+count =
+quiet-level = 3
