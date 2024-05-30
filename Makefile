@@ -15,6 +15,11 @@ help::
 	@echo --[ Navidrome Toolbox $(VERSION) ]--
 	@echo
 
+init:: 
+init::
+	$(shell cp -n config/beets/sample-config.yaml config/beets/config.yaml)
+	poetry install
+
 spell:: 
 	poetry run codespell
 
