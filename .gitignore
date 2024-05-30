@@ -4,3 +4,5 @@
 /config/navidrome/**
 !/config/navidrome/.gitkeep
 /music
+/output/** 
+!/output/.gitkeep
