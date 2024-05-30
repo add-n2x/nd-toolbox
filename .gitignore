@@ -1,5 +1,5 @@
 /tmp
-/data/beets/**
-!/data/beets/.gitkeep
-/data/navidrome/**
-!/data/navidrome/.gitkeep
+/config/beets/**
+!/config/beets/config.yaml
+/config/navidrome/**
+!/config/navidrome/.gitkeep

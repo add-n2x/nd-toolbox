@@ -1,0 +1,12 @@
+directory: ../music
+library: ./library.db
+import:
+  copy: no
+  move: no
+  write: no
+  autotag: no
+plugins: duplicates
+duplicates:
+  path: yes
+  group: yes
+  keys: [mb_trackid]  # You can choose other keys as needed
