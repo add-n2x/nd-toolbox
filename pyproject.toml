@@ -5,6 +5,7 @@ description = "Little helpers for Navidrome."
 authors = ["David Trattnig <david@subsquare.at>"]
 license = "AGPLv3"
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -12,6 +13,7 @@ python = "^3.12"
 
 [tool.poetry.group.dev.dependencies]
 codespell = "^2.3.0"
+beets = "^1.6.0"
 
 
 [build-system]
