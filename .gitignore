@@ -3,3 +3,4 @@
 !/config/beets/sample-config.yaml
 /config/navidrome/**
 !/config/navidrome/.gitkeep
+/music

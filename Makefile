@@ -18,6 +18,7 @@ help::
 init:: 
 init::
 	$(shell cp -n config/beets/sample-config.yaml config/beets/config.yaml)
+	$(shell mkdir -p music)
 	poetry install
 
 spell:: 
