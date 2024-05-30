@@ -25,9 +25,10 @@ make shell
 ensures using the prepared Beets configuration file.
 
 Using this configuration, all operations are done in a non-destructive way, meaning no write 
-operations are done on your music files. Nonetheless we cannot guarantee any malfunctions due to
-bugs and misconfiguration. Therefore always make copies of your files and libraries and do test
-runs wherever possible.
+operations are done on your music files and no files are copied. 
+
+Nonetheless we cannot guarantee any malfunctions due to bugs and misconfiguration. Therefore always 
+make copies of your files and libraries and do test runs wherever possible.
 
 ### Prepare music library
 
