@@ -2,8 +2,6 @@
 	
 # Config
 
-VERSION := $(shell poetry version)
-VERSION := $(lastword $(subst |, ,$(VERSION)))
 BEETSDIR = ./config/beets
 BEETSDIR_MUSIC_SOURCE = ./music
 export
@@ -12,7 +10,13 @@ export
 
 help::
 	@echo
-	@echo --[ Navidrome Toolbox $(VERSION) ]--
+	@echo --[ $(shell poetry version) ]--
+	@echo
+	@echo "- init             : init app"
+	@echo "- shell            : start app shell"
+	@echo "- beet.import      : import music to beets library"
+	@echo "- beet.duplicates  : list duplicates with beets"
+	@echo "- version          : app version"
 	@echo
 
 init:: 
@@ -20,9 +24,6 @@ init::
 	$(shell cp -n config/beets/sample-config.yaml config/beets/config.yaml)
 	$(shell mkdir -p music)
 	poetry install
-
-spell:: 
-	poetry run codespell
 
 shell::
 	poetry shell
@@ -33,8 +34,10 @@ beet.import::
 beet.duplicates::
 	beet duplicates  --full --strict
 
-
-version:: VERSION := $(shell poetry version)
-version:: VERSION := $(lastword $(subst |, ,$(VERSION)))
 version::
-	@echo Navidrome Toolbox ${VERSION}
+	@echo $(shell poetry version)
+
+# Dev targets
+
+spell:: 
+	poetry run codespell
