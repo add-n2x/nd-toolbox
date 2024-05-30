@@ -6,7 +6,11 @@ Little helpers for [Navidrome](https://www.navidrome.org/).
 
 - [Poetry](https://python-poetry.org/)
 
-Then install the dependencies using `poetry install`.
+Then install the dependencies and create the default configuration using:
+
+```bash
+make init
+```
 
 ## Usage
 
