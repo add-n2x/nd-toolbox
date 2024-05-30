@@ -1,7 +1,8 @@
-.DEFAULT_GOAL := help
-	
+# Music Toolbox Makefile
+
 # Config
 
+.DEFAULT_GOAL := help
 BEETSDIR = ./config/beets
 BEETSDIR_MUSIC_SOURCE = ./music
 export
@@ -38,7 +39,7 @@ beet.duplicates::
 beet.reset::
 	rm config/beets/library.db
 	rm config/beets/state.pickle
-	
+
 version::
 	@echo $(shell poetry version)
 
