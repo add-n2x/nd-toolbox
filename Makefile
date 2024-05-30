@@ -16,6 +16,7 @@ help::
 	@echo "- shell            : start app shell"
 	@echo "- beet.import      : import music to beets library"
 	@echo "- beet.duplicates  : list duplicates with beets"
+	@echo "- beet.reset       : delete beets music library"
 	@echo "- version          : app version"
 	@echo
 
@@ -34,6 +35,10 @@ beet.import::
 beet.duplicates::
 	beet duplicates  --full --strict
 
+beet.reset::
+	rm config/beets/library.db
+	rm config/beets/state.pickle
+	
 version::
 	@echo $(shell poetry version)
 
