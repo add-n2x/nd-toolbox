@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "navidrome-toolbox"
+name = "nd-toolbox"
 version = "0.1.0"
 description = "Little helpers for Navidrome."
 authors = ["David Trattnig <david@subsquare.at>"]
