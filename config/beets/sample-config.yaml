@@ -5,8 +5,16 @@ import:
   move: no
   write: no
   autotag: no
-plugins: duplicates
+pluginpath:
+    - src/beetsplug
+plugins: duplicates duplicatez
 duplicates:
-  path: yes
-  group: yes
-  keys: [mb_trackid]  # You can choose other keys as needed
+  format: $mb_trackid - $mb_albumid | $path
+  keys: [mb_trackid, mb_albumid]
+  full: yes
+  strict: yes
+  album: no
+  count: no
+  delete: no
+  path: no
+  group: no
