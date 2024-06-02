@@ -6,3 +6,4 @@
 /music
 /output/** 
 !/output/.gitkeep
+__pycache__
