@@ -1,9 +1,9 @@
 /tmp
-/config/beets/**
+/config/beets/**/*
 !/config/beets/sample-config.yaml
 /config/navidrome/**
 !/config/navidrome/.gitkeep
 /music
-/output/** 
+/output/**
 !/output/.gitkeep
 __pycache__
