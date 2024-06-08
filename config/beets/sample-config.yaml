@@ -7,7 +7,7 @@ import:
   autotag: no
 pluginpath:
     - src/beetsplug
-plugins: duplicates duplicatez
+plugins: bpmanalyser duplicates duplicatez
 duplicates:
   format: $mb_trackid - $mb_albumid | $path
   keys: [mb_trackid, mb_albumid]
