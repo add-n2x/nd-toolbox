@@ -1,0 +1,11 @@
+/.ruff_cache
+/tmp
+/config/beets/**/*
+!/config/beets/sample-config.yaml
+/config/navidrome/**
+!/config/navidrome/.gitkeep
+/music
+/output/**
+!/output/.gitkeep
+/test
+__pycache__
