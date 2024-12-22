@@ -1,4 +1,10 @@
-"""List duplicate tracks or albums, plus JSON file output.
+"""
+Beets Duplicatez Plugin.
+
+Extension of the official Beets Duplicates Plugin.
+
+In addition to listing duplicate tracks, the plugin will also output a JSON file with the duplicate information.
+This can be useful for further analysis or integration with other systems.
 """
 
 import json
@@ -42,9 +48,7 @@ class DuplicatezPlugin(DuplicatesPlugin):
         self._command.func = wrapper_func
         return [self._command]
 
-    def _process_item(
-        self, item: Item, copy=False, move=False, delete=False, tag=False, fmt=""
-    ):
+    def _process_item(self, item: Item, copy=False, move=False, delete=False, tag=False, fmt=""):
         """Wraps the parent method and creates an additional duplicates dict."""
         super()._process_item(item, copy, move, delete, tag, fmt)
         key = item.get("mb_trackid")
