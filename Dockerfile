@@ -7,7 +7,7 @@ LABEL build_version="Navidrome Toolbox version:- ${VERSION} Build-date:- ${BUILD
 LABEL maintainer="David Trattnig <david@subsquare.at>"
 
 # Configure poetry
-ENV POETRY_VERSION=1.8.3
+ENV POETRY_VERSION=1.8.5
 ENV POETRY_HOME=/opt/poetry
 ENV POETRY_VENV=/opt/poetry-venv
 ENV POETRY_CACHE_DIR=/opt/.cache
@@ -28,7 +28,6 @@ RUN echo "Installing dependencies..." && \
 # Add local files
 RUN mkdir -p /app
 COPY . /app/
-COPY .env Makefile pyproject.toml poetry.lock /app/
 
 # Linux Server conventions
 RUN ln -s /app/config /config
@@ -40,6 +39,4 @@ WORKDIR /app
 RUN cp -n ./config/beets/sample-config.yaml ./config/beets/config.yaml
 RUN poetry config virtualenvs.create false
 RUN poetry install --no-interaction --no-ansi
-# ENTRYPOINT ["tail", "-f", "/dev/null"]
 ENTRYPOINT ["/bin/bash"]
-# CMD ["docker.entrypoint"]
