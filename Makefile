@@ -1,18 +1,25 @@
-# Music Toolbox Makefile
-
-# Config
+#
+# Navidrome Toolbox CLI
+#
 
 .DEFAULT_GOAL := help
+
+# Load env vars from .env file
+include .env
+
+# Build vars
+VERSION := $(shell grep -m 1 version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)
+BUILD_DATE=$(shell date +%F)
+
+# Container vars
 BEETSDIR = ./config/beets
 BEETSDIR_MUSIC_SOURCE = ./music
-export
-
 BEETS_BASE_PATH := $(shell pwd)/music
 NAVIDROME_BASE_PATH := /music/library
 NAVIDROME_LIB := ./config/navidrome/navidrome.db
 NAVIDROME_INPUT_DUPLICATES := ./output/beets-duplicates.json
+export
 
-# App targets
 
 help::
 	@echo
@@ -26,36 +33,53 @@ help::
 	@echo "- nd.list          : "
 	@echo "- version          : app version"
 	@echo
+	@echo "- dev.spell        : run spell check"
+	@echo "- dev.ruff         : format code"
+	@echo
+	@echo "- docker.build	  : build the docker image"
+	@echo "- docker.run       : run the docker container"
+	@echo
 
-init::
+
+### App targets ###
+
 init::
 	$(shell cp -n config/beets/sample-config.yaml config/beets/config.yaml)
-	$(shell mkdir -p music)
 	poetry install
-
 shell::
 	poetry shell
-
 beet.import::
 	beet import -A $(BEETSDIR_MUSIC_SOURCE)
-
 beet.duplicatez::
 	beet duplicatez
-
 beet.reset::
 	rm config/beets/library.db
 	rm config/beets/state.pickle
-
-nd.list::
-	python src/ndtools/list.py $(NAVIDROME_LIB) $(NAVIDROME_INPUT_DUPLICATES) $(BEETS_BASE_PATH) $(NAVIDROME_BASE_PATH)
-
+# nd.list::
+# 	python src/ndtools/list.py $(NAVIDROME_LIB) $(NAVIDROME_INPUT_DUPLICATES) $(BEETS_BASE_PATH) $(NAVIDROME_BASE_PATH)
 version::
-	@echo $(shell poetry version)
+	@echo ${VERSION}
 
-# Dev targets
+### Development targets ###
 
-spell::
+dev.spell::
 	poetry run codespell
-
-ruff::
+dev.ruff::
 	poetry run ruff check ./**
+
+
+### Docker Targets ###
+
+docker.build::
+	docker build \
+		-t nd-toolbox \
+		--build-arg BUILD_DATE=$(BUILD_DATE) \
+		--build-arg VERSION=$(VERSION) \
+		.
+docker.run::
+	docker run --rm -it  \
+		-v $(DIR_CONFIG):/app/config  \
+		-v $(DIR_MUSIC):/app/music  \
+		-v $(DIR_OUTPUT):/app/output  \
+		-e TZ=${TIMEZONE} \
+		--entrypoint bash nd-toolbox
