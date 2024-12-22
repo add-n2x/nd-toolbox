@@ -8,6 +8,12 @@ Little helpers for [Navidrome](https://www.navidrome.org/).
 
 - [Poetry](https://python-poetry.org/)
 
+Create an `.env` file based on the sample:
+
+```bash
+cp -n sample.env .env
+```
+
 Then install the dependencies and create the default configuration using:
 
 ```bash
