@@ -14,9 +14,9 @@ python = "^3.12"
 
 [tool.poetry.group.dev.dependencies]
 codespell = "^2.3.0"
-beets = "^2.0.0"
-black = "^24.4.2"
-ruff = "^0.4.7"
+beets = "^2.2.0"
+black = "^24.10.0"
+ruff = "^0.4.10"
 
 
 [build-system]
