@@ -17,11 +17,17 @@ codespell = "^2.3.0"
 beets = "^2.2.0"
 black = "^24.10.0"
 ruff = "^0.4.10"
-
+pytest = "^8.3.4"
 
 [build-system]
 requires = ["poetry-core>=1.8.5"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = [
+    "--import-mode=importlib",
+]
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -55,11 +61,11 @@ exclude = [
 ]
 
 # Same as Black.
-line-length = 100
+line-length = 120
 indent-width = 4
 
-# Assume Python 3.12
-target-version = "py312"
+# Assume Python 3.13
+target-version = "py313"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
@@ -74,6 +80,9 @@ unfixable = []
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
@@ -93,7 +102,7 @@ line-ending = "auto"
 #
 # This is currently disabled by default, but it is planned for this
 # to be opt-out in the future.
-docstring-code-format = false
+docstring-code-format = true
 
 # Set the line length limit used when formatting code snippets in
 # docstrings.
