@@ -5,6 +5,7 @@ This module provides functionality to process duplicate media files.
 import json
 import os
 import sys
+import unicodedata
 
 from dotenv import find_dotenv, load_dotenv
 
@@ -54,10 +55,8 @@ class DuplicateProcessor:
             PU.red(f"No duplicates found in input file '{input_file_path}'")
             sys.exit(1)
 
-        # Init media files duplicates dictionary.
-        self.dups_media_files = self.dups_input.copy()
-        for key in self.dups_media_files.items():
-            self.dups_media_files[key] = []  # Initialize as empty list for further processing.
+        # Init media file duplicates dictionary for holding processing output.
+        self.dups_media_files = {}
 
         # Init logging objects.
         self.errors = []
@@ -95,8 +94,16 @@ class DuplicateProcessor:
             files = self.dups_input.get(key)
             self.stats.duplicate_records += 1
 
+            # Initialize the list for this key if it doesn't exist.
+            if not self.dups_media_files.get(key):
+                self.dups_media_files[key] = []
+
             for file in files:
                 self.stats.duplicate_files += 1
+                # Normalize Unicode characters in the file path. Otherwise characters like `á` (`\u0061\u0301`)
+                # and `á` (`\u00e1`) are not threaded as the same.
+                file = unicodedata.normalize("NFC", file)
+
                 PU.print(f"    Query {file}", l=0)
                 media: MediaFile = db.get_media(file)
                 self.dups_media_files[key].append(media)
