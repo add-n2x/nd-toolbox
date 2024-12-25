@@ -137,8 +137,8 @@ class MediaFile:
         track_number: int,
         duration: int,
         bitrate: int,
-        artist_id: Optional[str] = None,
-        album_id: Optional[str] = None,
+        artist_id: str,
+        album_id: str,
     ):
         self.id = id
         self.path = path
