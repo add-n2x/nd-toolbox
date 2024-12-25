@@ -36,16 +36,20 @@ class TerminalColors(Enum):
 
 class PrintUtils:
     @staticmethod
-    def red(text):
-        print(TerminalColors.RED.value + text + TerminalColors.RESET.value)
+    def print(text, l=0):
+        print(" " * 6 * l + text)
 
     @staticmethod
-    def green(text):
-        print(TerminalColors.GREEN.value + text + TerminalColors.RESET.value)
+    def red(text, l=0):
+        PrintUtils.print(TerminalColors.RED.value + text + TerminalColors.RESET.value, l)
 
     @staticmethod
-    def orange(text):
-        print(TerminalColors.ORANGE.value + text + TerminalColors.RESET.value)
+    def green(text, l=0):
+        PrintUtils.print(TerminalColors.GREEN.value + text + TerminalColors.RESET.value, l)
+
+    @staticmethod
+    def orange(text, l=0):
+        PrintUtils.print(TerminalColors.ORANGE.value + text + TerminalColors.RESET.value, l)
 
 
 class DotDict(dict):
