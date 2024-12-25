@@ -1,8 +1,10 @@
 # Navidrome Toolbox
 
-Little helpers for [Navidrome](https://www.navidrome.org/).
+Remove duplicates from your [Navidrome](https://www.navidrome.org/) music library, while keeping play stats. 
 
-<mark>WIP: This repository is work in progress. Features and documentation are not yet completed!</mark>
+And other little helpers for Navidrome Music Server.
+
+<mark>**WIP**: This repository is work in progress. Features and documentation are not yet completed!</mark>
 
 ## Prerequisites
 
