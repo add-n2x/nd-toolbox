@@ -57,7 +57,7 @@ class NavidromeDb:
 
     db_path: str = None
     user_id: str
-    arists: dict
+    artists: dict
     albums: dict
 
     def __init__(self, db_path: str):
