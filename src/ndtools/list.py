@@ -110,19 +110,19 @@ class DuplicateProcessor:
             PU.green(f"     └─ {media}")
             self.stats.media_files += 1
             if media.annotation:
-                PU.green("           └───── " + str(media.annotation))
+                PU.green(f"           └───── {media.annotation}")
                 self.stats.file_annotations += 1
             if media.artist:
-                PU.green("           └───── " + str(media.artist))
+                PU.green(f"           └───── {media.artist}")
                 if media.artist.annotation:
-                    PU.green("                     └───── " + str(media.artist.annotation))
+                    PU.green(f"                     └───── {media.artist.annotation}")
             else:
                 self.errors.append({"error": "artist not found", "path": file_path, "media": media})
                 PU.red("           └───── Artist not found in database!")
             if media.album:
-                PU.green("           └───── " + str(media.album))
+                PU.green(f"           └───── {media.album}")
                 if media.album.annotation:
-                    PU.green("                     └───── " + str(media.album.annotation))
+                    PU.green(f"                     └───── {media.album.annotation}")
             else:
                 # This is not seen as an error because not all media files have an album
                 PU.orange("           └───── Album not found in database!")
