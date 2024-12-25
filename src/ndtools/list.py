@@ -27,7 +27,7 @@ class DuplicateProcessor:
 
     db: NavidromeDb
     dups_input: dict
-    media_files: dict
+    dups_media_files: dict
     stats: DotDict
     errors: list
     output_folder: str
@@ -54,10 +54,12 @@ class DuplicateProcessor:
             PU.red(f"No duplicates found in input file '{input_file_path}'")
             sys.exit(1)
 
-        # Init media file list
-        self.media_files = []
+        # Init media files duplicates dictionary.
+        self.dups_media_files = self.dups_input.copy()
+        for key in self.dups_media_files.items():
+            self.dups_media_files[key] = []  # Initialize as empty list for further processing.
 
-        # Init logging objects
+        # Init logging objects.
         self.errors = []
         self.stats = DotDict({"duplicate_records": 0, "duplicate_files": 0, "media_files": 0, "file_annotations": 0})
 
@@ -88,16 +90,16 @@ class DuplicateProcessor:
         Query the Navidrome database for each duplicate file and get all relevant data.
         """
         for key in self.dups_input.keys():
-            print("")
-            print(f"[*] Processing duplicate {key}")
+            PU.print("")
+            PU.print(f"[*] Processing duplicate {key}")
             files = self.dups_input.get(key)
             self.stats.duplicate_records += 1
 
             for file in files:
                 self.stats.duplicate_files += 1
-                print(f"    Query {file}")
+                PU.print(f"    Query {file}", l=0)
                 media: MediaFile = db.get_media(file)
-                self.media_files.append(media)
+                self.dups_media_files[key].append(media)
                 self._log_info(file, media)
         self._print_stats()
         self._export_errors()
@@ -107,51 +109,51 @@ class DuplicateProcessor:
         Log information about the media file.
         """
         if media:
-            PU.green(f"     └─ {media}")
+            PU.green(f"└─ {media}", l=1)
             self.stats.media_files += 1
             if media.annotation:
-                PU.green(f"           └───── {media.annotation}")
+                PU.green(f"└───── {media.annotation}", l=2)
                 self.stats.file_annotations += 1
             if media.artist:
-                PU.green(f"           └───── {media.artist}")
+                PU.green(f"└───── {media.artist}", l=2)
                 if media.artist.annotation:
-                    PU.green(f"                     └───── {media.artist.annotation}")
+                    PU.green(f"└───── {media.artist.annotation}", l=3)
             else:
                 self.errors.append({"error": "artist not found", "path": file_path, "media": media})
-                PU.red("           └───── Artist not found in database!")
+                PU.red("└───── Artist not found in database!", l=2)
             if media.album:
-                PU.green(f"           └───── {media.album}")
+                PU.green(f"└───── {media.album}", l=2)
                 if media.album.annotation:
-                    PU.green(f"                     └───── {media.album.annotation}")
+                    PU.green(f"└───── {media.album.annotation}", l=3)
             else:
                 # This is not seen as an error because not all media files have an album
-                PU.orange("           └───── Album not found in database!")
+                PU.orange("└───── Album not found in database!", l=2)
         else:
             self.errors.append({"error": "media file not found", "path": file_path})
-            PU.red("           └───── Media file not found in database!")
+            PU.red("└───── Media file not found in database!", l=1)
 
     def _print_stats(self):
-        print("")
-        print("-----------------------------------------------------")
+        PU.print("")
+        PU.print("-----------------------------------------------------")
         PU.green(" STATISTICS")
-        print("-----------------------------------------------------")
-        print("")
+        PU.print("-----------------------------------------------------")
+        PU.print("")
         PU.green(" Duplicates:")
         PU.green(f"     Records: {self.stats.duplicate_records}")
         PU.green(f"     Files: {self.stats.duplicate_files}")
-        print("")
+        PU.print("")
         PU.green(" Media files:")
         PU.green(f"     Found: {self.stats.media_files}")
         PU.green(f"     Annotations: {self.stats.file_annotations}")
-        print("")
+        PU.print("")
         PU.green(f" Artists: {len(self.db.artists)}")
         PU.green(f" Albums: {len(self.db.albums)}")
-        print("")
+        PU.print("")
 
     def _export_errors(self):
-        print("-----------------------------------------------------")
+        PU.print("-----------------------------------------------------")
         PU.green(" ERRORS")
-        print("-----------------------------------------------------")
+        PU.print("-----------------------------------------------------")
         if len(self.errors) > 0:
             error_file = self.output_folder + "/errors.json"
             PU.red(f"Exporting {len(self.errors)} errors to {error_file} ...")
@@ -160,7 +162,7 @@ class DuplicateProcessor:
             PU.red("Done!")
         else:
             PU.green(" No errors found.")
-        print("-----------------------------------------------------")
+        PU.print("-----------------------------------------------------")
 
 
 if __name__ == "__main__":
