@@ -62,8 +62,8 @@ class DuplicatezPlugin(DuplicatesPlugin):
     def _render_json(self):
         """Renders the JSON file."""
         self._count_tracks = len(self._dupz.keys())
-        with open(self._file, "w") as file:
-            json.dump(self._dupz, file, indent=4)
+        with open(self._file, "w", encoding="utf-8") as file:
+            json.dump(self._dupz, file, indent=4, ensure_ascii=False)
         print("---")
         print(f"Found {self._count_tracks} tracks with {self._count_dups} duplicates")
         print(f"Stored to '{self._file}'")
