@@ -14,10 +14,6 @@ BUILD_DATE=$(shell date +%F)
 # Container vars
 BEETSDIR = ./config/beets
 BEETSDIR_MUSIC_SOURCE = ./music
-BEETS_BASE_PATH := /app/music
-NAVIDROME_BASE_PATH := /music/library
-NAVIDROME_LIB := ./config/navidrome/navidrome.db
-NAVIDROME_INPUT_DUPLICATES := ./output/beets-duplicates.json
 export
 
 
@@ -56,7 +52,7 @@ beet.reset::
 	rm config/beets/library.db
 	rm config/beets/state.pickle
 nd.list::
-	poetry run python src/ndtools/list.py $(NAVIDROME_LIB) $(NAVIDROME_INPUT_DUPLICATES) $(BEETS_BASE_PATH) $(NAVIDROME_BASE_PATH)
+	poetry run python src/ndtools/list.py
 version::
 	@echo ${VERSION}
 
