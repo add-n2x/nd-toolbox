@@ -3,10 +3,13 @@ name = "nd-toolbox"
 version = "0.2.0"
 description = "Little helpers for Navidrome."
 authors = ["David Trattnig <david@subsquare.at>"]
-license = "AGPLv3"
+license = "AGPL-3.0-or-later"
 readme = "README.md"
 package-mode = false
-packages = [{include = "beetsplug", from="src"}]
+packages = [
+    { include = "beetsplug", from="src" },
+    { include = "ndtoolbox", from="src" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
