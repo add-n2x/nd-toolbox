@@ -113,6 +113,60 @@ class DuplicateProcessor:
         self._print_stats()
         self._export_errors()
 
+    def merge_annotations(self, duplicate_media_files: []):
+        """
+        Merge all data of media file annotations.
+
+        Args:
+            duplicate_media_files ([]): A list of duplicates.
+        """
+        if not duplicate_media_files or len(duplicate_media_files) < 2:
+            PU.red("No duplicates to merge annotations.")
+            return
+        PU.print(f"Merging annotations for {len(duplicate_media_files)} duplicates...")
+        for dup in duplicate_media_files[1 : len(duplicate_media_files)]:
+            self._merge_annotation_data(duplicate_media_files[0], dup)
+
+    def _merge_annotation_data(self, a: MediaFile, b: MediaFile):
+        """
+        Merge annotation data of two MediaFile objects.
+        """
+        aa = a.annotation
+        ba = b.annotation
+        PU.print(f"Merging annotations for {aa} and {ba} ...")
+
+        if aa and ba:
+            # Combine play counts
+            aa.play_count += int(ba.play_count)
+            ba.play_count = aa.play_count
+            PU.print(f"Combined play count: {aa.play_count}", 1)
+            if aa.play_date > ba.play_date:
+                ba.play_date = aa.play_date
+            else:
+                aa.play_date = ba.play_date
+            PU.print(f"Updated play date: {aa.play_date}", 1)
+
+            # Keep the better rating
+            if aa.rating and ba.rating:
+                if aa.rating > ba.rating:
+                    ba.rating = aa.rating
+                else:
+                    aa.rating = ba.rating
+            elif aa.rating and not ba.rating:
+                ba.rating = aa.rating
+            elif not aa.rating and ba.rating:
+                aa.rating = ba.rating
+            PU.print(f"Merged rating: {aa.rating}", 1)
+
+            # If one is starred, both are starred
+            if aa.starred and not ba.starred:
+                ba.starred = True
+                ba.starred_at = aa.starred_at
+            elif not aa.starred and ba.starred:
+                aa.starred = True
+                aa.starred_at = ba.starred_at
+            PU.print(f"Is starred: {aa.starred}", 1)
+
     def _log_info(self, file_path: str, media: MediaFile):
         """
         Log information about the media file.
@@ -172,46 +226,6 @@ class DuplicateProcessor:
         else:
             PU.green(" No errors found.")
         PU.print("-----------------------------------------------------")
-
-    def merge_annotation_data(self, a: MediaFile, b: MediaFile):
-        """
-        Merge annotation data of two MediaFile objects.
-        """
-        aa = a.annotation
-        ba = b.annotation
-        PU.print(f"Merging annotations for {aa} and {ba} ...")
-
-        if aa and ba:
-            # Combine play counts
-            aa.play_count += int(ba.play_count)
-            ba.play_count = aa.play_count
-            PU.print(f"Combined play count: {aa.play_count}", 1)
-            if aa.play_date > ba.play_date:
-                ba.play_date = aa.play_date
-            else:
-                aa.play_date = ba.play_date
-            PU.print(f"Updated play date: {aa.play_date}", 1)
-
-            # Keep the better rating
-            if aa.rating and ba.rating:
-                if aa.rating > ba.rating:
-                    ba.rating = aa.rating
-                else:
-                    aa.rating = ba.rating
-            elif aa.rating and not ba.rating:
-                ba.rating = aa.rating
-            elif not aa.rating and ba.rating:
-                aa.rating = ba.rating
-            PU.print(f"Merged rating: {aa.rating}", 1)
-
-            # If one is starred, both are starred
-            if aa.starred and not ba.starred:
-                ba.starred = True
-                ba.starred_at = aa.starred_at
-            elif not aa.starred and ba.starred:
-                aa.starred = True
-                aa.starred_at = ba.starred_at
-            PU.print(f"Is starred: {aa.starred}", 1)
 
 
 if __name__ == "__main__":
