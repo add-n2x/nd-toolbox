@@ -31,6 +31,7 @@ help::
 	@echo
 	@echo "- dev.spell        : run spell check"
 	@echo "- dev.ruff         : format code"
+	@echo "- dev.test         : run tests"
 	@echo
 	@echo "- docker.build	  : build the docker image"
 	@echo "- docker.run       : run the docker container"
