@@ -2,13 +2,12 @@
 Navidrome database classes.
 """
 
-import datetime
 import random
 import sqlite3
 import string
-from utils import PrintUtils as PU
 
-from model import Album, Annotation, Artist, MediaFile
+from ndtools.utils import PrintUtils as PU
+from ndtools.model import Album, Annotation, Artist, MediaFile
 
 
 class NavidromeDbConnection(object):
