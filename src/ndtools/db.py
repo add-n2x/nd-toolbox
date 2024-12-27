@@ -95,49 +95,9 @@ class NavidromeDb:
 
             return users[0][0]
 
-    # def update_playstats(d1, id, playcount, playdate, rating=0):
-    #     d1.setdefault(id, {})
-    #     d1[id].setdefault("play count", 0)
-    #     d1[id].setdefault("play date", datetime.datetime.fromordinal(1))
-    #     d1[id]["play count"] += playcount
-    #     d1[id]["rating"] = rating
-
-    #     if playdate > d1[id]["play date"]:
-    #         d1[id].update({"play date": playdate})
-
-    # def write_to_annotation(self, dictionary_with_stats, entry_type):
-    #     annotation_entries = []
-    #     for item_id in dictionary_with_stats:
-    #         this_entry = dictionary_with_stats[item_id]
-
-    #         play_count = this_entry["play count"]
-    #         play_date = this_entry["play date"].strftime("%Y-%m-%d %H:%M:%S")  # YYYY-MM-DD 24:mm:ss
-    #         rating = this_entry["rating"]
-
-    #         annotation_entries.append(
-    #             (
-    #                 NavidromeDb.generate_annotation_id(),
-    #                 self.user_id,
-    #                 item_id,
-    #                 entry_type,
-    #                 play_count,
-    #                 play_date,
-    #                 rating,
-    #                 0,
-    #                 None,
-    #             )
-    #         )
-    #     with NavidromeDbConnection() as conn:
-    #         cur = conn.cursor()
-    #         cur.executemany(
-    #             "INSERT INTO annotation VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    #             annotation_entries,
-    #         )
-    #         conn.commit()
-
     def get_media(self, file_path: str) -> MediaFile:
         """
-        Retrieves the media file associated with the given file path.
+        Retrieves the media file associated with the given file path and all related objects.
 
         This method also fetches artist and album and any annotations available.
         If artist and album objects are available in the cache, then those are used.
@@ -148,23 +108,29 @@ class NavidromeDb:
         Returns:
             MediaFile: The media file object.
         """
-        media = self._get_media_file(file_path)
+        media = self.get_media_file(file_path)
         if media:
             # Get file annotation
-            media.annotation = self._get_media_annotations(media, Annotation.Type.media_file)
+            media.annotation = self.get_media_annotation(media, Annotation.Type.media_file)
             # Get artist data
             media.artist = self.artists.get(media.artist_id)
-            media.artist = self._get_artist(media, media.artist_id) if not media.artist else media.artist
+            media.artist = self.get_artist(media, media.artist_id) if not media.artist else media.artist
             if media.artist:
                 self.artists[media.artist_id] = media.artist
             # Get album data
             media.album = self.albums.get(media.album_id)
-            media.album = self._get_album(media, media.album_id) if not media.album else media.album
+            media.album = self.get_album(media, media.album_id) if not media.album else media.album
             if media.album:
                 self.albums[media.album_id] = media.album
         return media
 
-    def _get_media_file(self, file_path: str) -> MediaFile:
+    def get_media_file(self, file_path: str) -> MediaFile:
+        """
+        Retrieve a media file from the database based on its path.
+
+        Args:
+            file_path (str): The path of the media file to retrieve.
+        """
         query = """
             SELECT id, title, year, track_number, duration, bit_rate, artist_id, album_id
             FROM media_file
@@ -181,7 +147,17 @@ class NavidromeDb:
                 result[0], file_path, result[1], result[2], result[3], result[4], result[5], result[6], result[7]
             )
 
-    def _get_artist(self, media_file: MediaFile, artist_id: str) -> Artist:
+    def get_artist(self, media_file: MediaFile, artist_id: str) -> Artist:
+        """
+        Retrieve an artist from the database based on their ID.
+
+        Args:
+           media_file (MediaFile): The media file associated with the artist.
+           artist_id (str): The ID of the artist to retrieve.
+
+        Returns:
+            Artist: The retrieved artist object. If the artist is not found, returns None.
+        """
         query = """
             SELECT name, album_count
             FROM artist
@@ -195,10 +171,13 @@ class NavidromeDb:
             if not result:
                 return None
             artist = Artist(id, result[0], result[1])
-            artist.annotation = self._get_media_annotations(media_file, Annotation.Type.artist)
+            artist.annotation = self.get_media_annotation(media_file, Annotation.Type.artist)
             return artist
 
-    def _get_album(self, media_file: MediaFile, album_id: str) -> Album:
+    def get_album(self, media_file: MediaFile, album_id: str) -> Album:
+        """
+        Retrieve an album associcated with the media file.
+        """
         query = """
             SELECT name, artist_id, song_count
             FROM album
@@ -212,21 +191,35 @@ class NavidromeDb:
             if not result:
                 return None
             album = Album(album_id, result[0], result[1], result[2])
-            album.annotation = self._get_media_annotations(media_file, Annotation.Type.album)
+            album.annotation = self.get_media_annotation(media_file, Annotation.Type.album)
             return album
 
-    def _get_media_annotations(self, media_file: MediaFile, type: Annotation.Type) -> Annotation:
+    def get_media_annotation(self, media_file: MediaFile, type: Annotation.Type) -> Annotation:
         """
-        Get media annotations for a given media file.
+        Get media annotation for a given media file and type.
 
         Args:
-            media_file (MediaFile): The media file object.
-            type (Annotation.Type): The type of the annotation.
+            media_file (MediaFile): The media file object holding the relevant item id.
+            type (Annotation.Type): The type of the annotation, used for querying the item type.
+
+        Returns:
+            Annotation: The annotation object for the given media file and type, if existing.
+        """
+        item_id: str = media_file.__getattribute__(type.value)
+        return self.get_annotation(item_id, type)
+
+    def get_annotation(self, item_id: str, type: Annotation.Type) -> Annotation:
+        """
+        Get annotation for a given item and type.
+
+        Args:
+            item_id (str): The id of the item to get annotations for.
+            type (Annotation.Type): The type of the annotation, used for querying the item type.
 
         Returns:
            Annotation: The annotation object for the given media file and type, if existing.
         """
-        item_id = media_file.__getattribute__(type.value)
+
         query = """
             SELECT ann_id, play_count, play_date, rating, starred, starred_at 
             FROM annotation 
@@ -241,6 +234,77 @@ class NavidromeDb:
             if not result:
                 return None
             return Annotation(result[0], item_id, type, result[1], result[2], result[3], result[4], result[5])
+
+    def store_annotation(self, annotation: Annotation) -> str:
+        """
+        Adds an annotation to the database. If the annotation already exists, it will be updated.
+
+        Args:
+            annotation (Annotation): The annotation object to be added or updated.
+
+        Returns:
+           str: The ID of the stored annotation. If an existing annotation was updated, it will return the same ID.
+        """
+        query = None
+        args = None
+        pd = annotation.play_date.strftime("%Y-%m-%d %H:%M:%S") if annotation.play_date else None  # YYYY-MM-DD 24:mm:ss
+        starred_at = annotation.starred_at.strftime("%Y-%m-%d %H:%M:%S") if annotation.starred_at else None
+
+        if annotation.id:
+            query = "UPDATE annotation SET play_count = ?, play_date = ?, rating = ?, starred = ?, starred_at = ? WHERE user_id = ? AND item_id = ? AND item_type = ?"
+            args = (
+                annotation.play_count,
+                pd,
+                annotation.rating,
+                annotation.starred,
+                starred_at,
+                self.user_id,
+                annotation.item_id,
+                annotation.item_type.name,
+            )
+        else:
+            annotation.id = self.generate_annotation_id()
+            # Annotation columns: ann_id, user_id, item_id, item_type, play_count, play_date, rating, starred, starred_at
+            query = """
+                INSERT INTO annotation (ann_id, user_id, item_id, item_type, play_count, play_date, rating, starred, starred_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            args = (
+                annotation.id,
+                self.user_id,
+                annotation.item_id,
+                annotation.item_type.name,
+                annotation.play_count,
+                pd,
+                annotation.rating,
+                annotation.starred,
+                starred_at,
+            )
+
+        with NavidromeDbConnection(debug=True) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                query,
+                args,
+            )
+            conn.commit()
+        return annotation.id
+
+    def delete_annotation(self, item_id: int, item_type: Annotation.Type):
+        """
+        Delete an annotation identified by item_id, item_type and user_id.
+
+        Args:
+            item_id (int): The ID of the item associated with the annotation.
+            item_type (Annotation.Type): The type of the item associated with the annotation.
+        """
+        with NavidromeDbConnection() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "DELETE FROM annotation WHERE item_id=? AND item_type=? AND user_id=?",
+                (item_id, item_type.name, self.user_id),
+            )
+            conn.commit()
 
     @staticmethod
     def generate_annotation_id() -> str:
