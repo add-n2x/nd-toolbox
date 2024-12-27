@@ -21,30 +21,25 @@ help::
 	@echo
 	@echo --[ $(shell poetry version) ]--
 	@echo
-	@echo "- init             : init app"
-	@echo "- shell            : start app shell"
-	@echo "- beet.import      : import music to beets library"
-	@echo "- beet.duplicatez  : list duplicates with beets and export JSON"
-	@echo "- beet.reset       : delete beets music library"
-	@echo "- nd.list          : "
-	@echo "- version          : app version"
+	@echo "- beet.import    		: import music to beets library"
+	@echo "- beet.duplicatez  		: list duplicates with beets and export JSON"
+	@echo "- beet.reset       		: delete beets music library"
+	@echo "- nd.merge-annotations		: read annotations of all duplicates, merge and store them"
 	@echo
-	@echo "- dev.spell        : run spell check"
-	@echo "- dev.ruff         : format code"
-	@echo "- dev.test         : run tests"
+	@echo "- dev.init			: init app"	
+	@echo "- dev.shell			: start app shell"
+	@echo "- dev.spell        		: run spell check"
+	@echo "- dev.ruff         		: format code"
+	@echo "- dev.test			: run tests"
 	@echo
-	@echo "- docker.build	  : build the docker image"
-	@echo "- docker.run       : run the docker container"
+	@echo "- docker.build	 		: build the docker image"
+	@echo "- docker.run			: run the docker container"
 	@echo
+	@echo "- version          		: app version"
 
 
 ### App targets ###
 
-init::
-	$(shell cp -n config/beets/sample-config.yaml config/beets/config.yaml)
-	poetry install
-shell::
-	poetry shell
 beet.import::
 	beet import -A $(BEETSDIR_MUSIC_SOURCE)
 beet.duplicatez::
@@ -52,13 +47,18 @@ beet.duplicatez::
 beet.reset::
 	rm config/beets/library.db
 	rm config/beets/state.pickle
-nd.list::
-	poetry run python src/ndtools/list.py
+nd.merge-annotations::
+	poetry run python src/ndtools/app.py action=merge-annotations
 version::
 	@echo ${VERSION}
 
 ### Development targets ###
 
+dev.init::
+	$(shell cp -n config/beets/sample-config.yaml config/beets/config.yaml)
+	poetry install
+dev.shell::
+	poetry shell
 dev.spell::
 	poetry run codespell
 dev.ruff::

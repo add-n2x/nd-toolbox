@@ -249,6 +249,10 @@ class DuplicateProcessor:
 
 
 if __name__ == "__main__":
+    # Read the action argument from the command line
+    action = sys.argv[1] if len(sys.argv) > 1 else None
+    action = action.split("action=")[1]
+
     load_dotenv(find_dotenv())
 
     config_dir = None
@@ -270,4 +274,8 @@ if __name__ == "__main__":
 
     db = NavidromeDb(f"{config_dir}/navidrome/navidrome.db")
     processor = DuplicateProcessor(db, report_dir, source_base, target_base)
-    processor.merge_and_store_annotations()
+
+    if action == "merge-annotations":
+        processor.merge_and_store_annotations()
+    else:
+        PU.red(f"{action}: Invalid action specified")
