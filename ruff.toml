@@ -36,13 +36,23 @@ indent-width = 4
 target-version = "py39"
 
 [lint]
-# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
-# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
-# McCabe complexity (`C901`) by default.
-# Enable flake8-bugbear (`B`) rules, in addition to the defaults.
-select = ["E4", "E7", "E9", "F", "B"]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "N",  # PEP8 naming convetions
+    "D"  # pydocstyle
+]
 
-ignore = []
+ignore = [
+    "D200", # Allow one line doc string on multiple lines.
+    "D212", # Docstring must not start on the first line.
+    "D417", # Disable Google `D417`, which requires documentation for every function parameter.
+    "N817" # Allow acronym imports
+]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
@@ -78,3 +88,6 @@ docstring-code-format = false
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
+
+[lint.pydocstyle]
+convention = "google"
