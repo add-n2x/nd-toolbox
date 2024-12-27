@@ -1,4 +1,6 @@
 import pytest
+
+from datetime import datetime
 from ndtools.db import NavidromeDb, Annotation
 from ndtools.utils import DotDict
 
@@ -75,3 +77,39 @@ def test_get_media(db):
     assert anno.rating == test_anno.rating
     assert anno.starred == test_anno.starred
     assert anno.starred_at is test_anno.starred_at
+
+
+def test_get_invalid_annotation(db):
+    # Attempt to retrieve an annotation that does not exist
+    invalid_anno = db.get_annotation(1000, Annotation.Type.album)
+    assert invalid_anno is None
+
+
+def test_store_annotation(db):
+    # Delete any existing annotations with item_id 999
+    db.delete_annotation("999", Annotation.Type.album)
+
+    # Create a new annotation object, without specifying an ID (let the DAO generate it)
+    new_anno = Annotation(
+        id=None,
+        item_id="999",
+        item_type=Annotation.Type.album,
+        play_count=5,
+        play_date=datetime.now(),
+        rating=4,
+        starred=True,
+        starred_at=datetime.now(),
+    )
+    # Store the annotation in the database
+    anno_id = db.store_annotation(new_anno)
+    assert anno_id is not None
+    # Retrieve the stored annotation to verify it was saved correctly
+    stored_anno = db.get_annotation("999", Annotation.Type.album)
+
+    assert stored_anno is not None
+    assert stored_anno.item_id == new_anno.item_id
+    assert stored_anno.item_type == new_anno.item_type
+    assert stored_anno.play_count == new_anno.play_count
+    assert stored_anno.rating == new_anno.rating
+    assert stored_anno.starred == new_anno.starred
+    assert stored_anno.starred_at is not None
