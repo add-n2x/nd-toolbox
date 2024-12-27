@@ -118,7 +118,7 @@ class DuplicateProcessor:
                 # and `á` (`\u00e1`) are not threaded as the same.
                 file = unicodedata.normalize("NFC", file)
 
-                PU.print(f"    Query {file}", l=0)
+                PU.print(f"    Query {file}", 0)
                 media: MediaFile = db.get_media(file)
                 self.dups_media_files[key].append(media)
                 self._log_info(file, media)
@@ -191,28 +191,28 @@ class DuplicateProcessor:
         Log information about the media file.
         """
         if media:
-            PU.green(f"└─ {media}", l=1)
+            PU.green(f"└─ {media}", 1)
             self.stats.media_files += 1
             if media.annotation:
-                PU.green(f"└───── {media.annotation}", l=2)
+                PU.green(f"└───── {media.annotation}", 2)
                 self.stats.file_annotations += 1
             if media.artist:
-                PU.green(f"└───── {media.artist}", l=2)
+                PU.green(f"└───── {media.artist}", 2)
                 if media.artist.annotation:
-                    PU.green(f"└───── {media.artist.annotation}", l=3)
+                    PU.green(f"└───── {media.artist.annotation}", 3)
             else:
                 self.errors.append({"error": "artist not found", "path": file_path, "media": media})
-                PU.red("└───── Artist not found in database!", l=2)
+                PU.red("└───── Artist not found in database!", 2)
             if media.album:
-                PU.green(f"└───── {media.album}", l=2)
+                PU.green(f"└───── {media.album}", 2)
                 if media.album.annotation:
-                    PU.green(f"└───── {media.album.annotation}", l=3)
+                    PU.green(f"└───── {media.album.annotation}", 3)
             else:
                 # This is not seen as an error because not all media files have an album
-                PU.orange("└───── Album not found in database!", l=2)
+                PU.orange("└───── Album not found in database!", 2)
         else:
             self.errors.append({"error": "media file not found", "path": file_path})
-            PU.red("└───── Media file not found in database!", l=1)
+            PU.red("└───── Media file not found in database!", 1)
 
     def _print_stats(self):
         PU.print("")
