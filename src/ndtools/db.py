@@ -176,7 +176,7 @@ class NavidromeDb:
 
     def get_album(self, media_file: MediaFile, album_id: str) -> Album:
         """
-        Retrieve an album associcated with the media file.
+        Retrieve an album associated with the media file.
         """
         query = """
             SELECT name, artist_id, song_count
