@@ -6,6 +6,8 @@ from ndtools.model import Annotation, MediaFile
 
 TEST_DB_PATH = "config/navidrome/navidrome.db"
 DIR_OUTPUT = "./output"
+BEETS_BASE_PATH = "/app/music"
+NAVIDROME_BASE_PATH = "/music/library"
 
 
 @pytest.fixture(scope="session")
@@ -16,7 +18,7 @@ def db():
 
 @pytest.fixture(scope="session")
 def processor():
-    processor = DuplicateProcessor(db, DIR_OUTPUT)
+    processor = DuplicateProcessor(db, DIR_OUTPUT, BEETS_BASE_PATH, NAVIDROME_BASE_PATH)
     yield processor
 
 
@@ -75,7 +77,7 @@ def test_merge_annotation_data(processor):
     assert b.annotation.starred
 
 
-def test_merge_annotations(processor):
+def test_merge_annotation_list(processor):
     # Create a list of four Media files with annotations
     files = [
         MediaFile(
@@ -136,7 +138,7 @@ def test_merge_annotations(processor):
             starred_at="2022-01-01",
         )
 
-    processor.merge_annotations(files)
+    processor._merge_annotation_list(files)
 
     assert files[0].annotation.play_count == 9
     assert files[0].annotation.rating == 4
