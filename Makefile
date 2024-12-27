@@ -62,7 +62,7 @@ version::
 dev.spell::
 	poetry run codespell
 dev.ruff::
-	poetry run ruff check ./**
+	poetry run ruff check .
 dev.test::
 	poetry run pytest -s
 
