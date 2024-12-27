@@ -2,8 +2,27 @@
 Utility classes and functions for the ndtools package.
 """
 
+from datetime import datetime
 import sys
 from enum import Enum
+
+
+class DateUtil:
+    """Utility class for date operations."""
+
+    @staticmethod
+    def format_date(date: datetime, fmt: str = "%Y-%m-%d %H:%M:%S") -> str:
+        """Format a date according to the specified format."""
+        if not date:
+            return ""
+        return date.strftime(fmt)
+
+    @staticmethod
+    def parse_date(date_str: str, fmt: str = "%Y-%m-%d %H:%M:%S") -> datetime:
+        """Parse a date string according to the specified format."""
+        if not date_str:
+            return None
+        return datetime.strptime(date_str, fmt)
 
 
 class CLI:
