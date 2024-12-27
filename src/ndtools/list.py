@@ -9,9 +9,10 @@ import unicodedata
 
 from dotenv import find_dotenv, load_dotenv
 
-from ndtools.model import MediaFile
 from ndtools.db import NavidromeDb
-from ndtools.utils import DotDict, PrintUtils as PU
+from ndtools.model import MediaFile
+from ndtools.utils import DotDict
+from ndtools.utils import PrintUtils as PU
 
 
 class DuplicateProcessor:
@@ -182,7 +183,6 @@ class DuplicateProcessor:
         """
         Save all annotations of all media file duplicates to the database.
         """
-
         for media in self.dups_media_files:
             self.db.store_annotation(media.annotation)
 

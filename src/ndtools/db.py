@@ -6,8 +6,8 @@ import random
 import sqlite3
 import string
 
-from ndtools.utils import PrintUtils as PU
 from ndtools.model import Album, Annotation, Artist, MediaFile
+from ndtools.utils import PrintUtils as PU
 
 
 class NavidromeDbConnection(object):
@@ -18,6 +18,7 @@ class NavidromeDbConnection(object):
     debug: bool
 
     def __init__(self, debug=False):
+        """Init instance."""
         self.debug = debug
 
     def __enter__(self):
@@ -219,7 +220,6 @@ class NavidromeDb:
         Returns:
            Annotation: The annotation object for the given media file and type, if existing.
         """
-
         query = """
             SELECT ann_id, play_count, play_date, rating, starred, starred_at 
             FROM annotation 

@@ -8,10 +8,11 @@ This can be useful for further analysis or integration with other systems.
 """
 
 import json
+
 import beets
+from beets.library import Item
 
 from beetsplug.duplicates import DuplicatesPlugin
-from beets.library import Item
 
 
 class DuplicatezPlugin(DuplicatesPlugin):

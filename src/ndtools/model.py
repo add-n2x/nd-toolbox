@@ -24,6 +24,8 @@ class Annotation:
     """
 
     class Type(Enum):
+        """Annotation Types."""
+
         media_file = "id"
         artist = "artist_id"
         album = "album_id"
@@ -48,6 +50,7 @@ class Annotation:
         starred: bool,
         starred_at: datetime,
     ):
+        """Init instance."""
         self.id = id
         self.item_id = item_id
         self.item_type = item_type
@@ -58,6 +61,7 @@ class Annotation:
         self.starred_at = starred_at
 
     def __repr__(self) -> str:
+        """Instance representation."""
         return f"Annotation(id={self.id}, item_id={self.item_id}, play_count={self.play_count}, play_date={self.play_date}, rating={self.rating}, starred={self.starred}, starred_at={self.starred_at})"
 
 
@@ -70,11 +74,13 @@ class Artist:
     annotation: Optional[Annotation]
 
     def __init__(self, id: str, name: str, album_count: int):
+        """Init instance."""
         self.id = id
         self.name = name
         self.album_count = album_count
 
     def __repr__(self) -> str:
+        """Instance representation."""
         return f"Artist(id={self.id}, name={self.name}, album_count={self.album_count})"
 
 
@@ -88,12 +94,14 @@ class Album:
     annotation: Optional[Annotation]
 
     def __init__(self, id: str, name: str, artist_id: str, song_count: int):
+        """Init instance."""
         self.id = id
         self.name = name
         self.artist_id = artist_id
         self.song_count = song_count
 
     def __repr__(self) -> str:
+        """Instance representation."""
         return f"Album(id={self.id}, name={self.name}, artist_id={self.artist_id}, song_count={self.song_count})"
 
 
@@ -140,6 +148,7 @@ class MediaFile:
         artist_id: str,
         album_id: str,
     ):
+        """Init instance."""
         self.id = id
         self.path = path
         self.title = title
@@ -151,4 +160,5 @@ class MediaFile:
         self.album_id = album_id
 
     def __repr__(self):
+        """Instance representation."""
         return f"MediaFile(id={self.id}, path={self.path}, title={self.title}, year={self.year}, track_number={self.track_number}, duration={self.duration}, bitrate={self.bitrate}, artist_id={self.artist_id}, album_id={self.album_id})"

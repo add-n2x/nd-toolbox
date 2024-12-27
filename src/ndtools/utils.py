@@ -2,12 +2,15 @@
 Utility classes and functions for the ndtools package.
 """
 
-from enum import Enum
 import sys
+from enum import Enum
 
 
 class CLI:
+    """Terminal dialog asking to continue or exit."""
+
     def ask_continue():
+        """Ask to continue or exit."""
         _ = input("Type (c) to continue, any key to quit: ").lower()
         if _ != "c":
             print("Good bye.")
@@ -35,6 +38,10 @@ class TerminalColors(Enum):
 
 
 class PrintUtils:
+    """
+    Utilities for printing and logging.
+    """
+
     @staticmethod
     def print(text, lvl):
         print(" " * 6 * lvl + text)
