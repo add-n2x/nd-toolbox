@@ -2,7 +2,7 @@
 # Navidrome Toolbox CLI
 #
 
-.DEFAULT_GOAL := help
+export PYTHONPATH := src:$(PYTHONPATH)
 
 # Load env vars from .env file
 include .env
@@ -16,7 +16,7 @@ BEETSDIR = ./config/beets
 BEETSDIR_MUSIC_SOURCE = ./music
 export
 
-
+.DEFAULT_GOAL := help
 help::
 	@echo
 	@echo --[ $(shell poetry version) ]--
