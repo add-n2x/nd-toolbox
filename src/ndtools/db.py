@@ -7,6 +7,7 @@ import sqlite3
 import string
 
 from ndtools.model import Album, Annotation, Artist, MediaFile
+from ndtools.utils import DateUtil as DU
 from ndtools.utils import PrintUtils as PU
 
 
@@ -113,6 +114,18 @@ class NavidromeDb:
         if media:
             # Get file annotation
             media.annotation = self.get_media_annotation(media, Annotation.Type.media_file)
+            # If no annotation exists, create one
+            if not media.annotation:
+                media.annotation = Annotation(
+                    id=None,
+                    item_id=media.id,
+                    item_type=Annotation.Type.media_file,
+                    play_count=0,
+                    play_date=None,
+                    rating=0,
+                    starred=False,
+                    starred_at=None,
+                )
             # Get artist data
             media.artist = self.artists.get(media.artist_id)
             media.artist = self.get_artist(media, media.artist_id) if not media.artist else media.artist
@@ -159,26 +172,41 @@ class NavidromeDb:
         Returns:
             Artist: The retrieved artist object. If the artist is not found, returns None.
         """
+        result = None
         query = """
             SELECT name, album_count
             FROM artist
             WHERE id LIKE ?
         """
+
         with NavidromeDbConnection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, (artist_id,))
             result = cursor.fetchone()
-
             if not result:
                 return None
-            artist = Artist(id, result[0], result[1])
-            artist.annotation = self.get_media_annotation(media_file, Annotation.Type.artist)
-            return artist
+
+        artist = Artist(id, result[0], result[1])
+        artist.annotation = self.get_media_annotation(media_file, Annotation.Type.artist)
+        # If no annotation exists, create one
+        if not artist.annotation:
+            artist.annotation = Annotation(
+                id=None,
+                item_id=artist.id,
+                item_type=Annotation.Type.artist,
+                play_count=0,
+                play_date=None,
+                rating=0,
+                starred=False,
+                starred_at=None,
+            )
+        return artist
 
     def get_album(self, media_file: MediaFile, album_id: str) -> Album:
         """
         Retrieve an album associated with the media file.
         """
+        result = None
         query = """
             SELECT name, artist_id, song_count
             FROM album
@@ -188,12 +216,24 @@ class NavidromeDb:
             cursor = conn.cursor()
             cursor.execute(query, (album_id,))
             result = cursor.fetchone()
-
             if not result:
                 return None
-            album = Album(album_id, result[0], result[1], result[2])
-            album.annotation = self.get_media_annotation(media_file, Annotation.Type.album)
-            return album
+
+        album = Album(album_id, result[0], result[1], result[2])
+        album.annotation = self.get_media_annotation(media_file, Annotation.Type.album)
+        # If no annotation exists, create one
+        if not album.annotation:
+            album.annotation = Annotation(
+                id=None,
+                item_id=album.id,
+                item_type=Annotation.Type.album,
+                play_count=0,
+                play_date=None,
+                rating=0,
+                starred=False,
+                starred_at=None,
+            )
+        return album
 
     def get_media_annotation(self, media_file: MediaFile, type: Annotation.Type) -> Annotation:
         """
@@ -231,9 +271,23 @@ class NavidromeDb:
             cursor.execute(query, (self.user_id, str(item_id), str(type.name)))
             result = cursor.fetchone()
 
-            if not result:
+            try:
+                if not result:
+                    return None
+                return Annotation(
+                    result[0],
+                    item_id,
+                    type,
+                    result[1],
+                    DU.parse_date(result[2]),
+                    result[3],
+                    result[4],
+                    DU.parse_date(result[5]),
+                )
+
+            except Exception as e:
+                print(f"Error fetching annotation: {e} -- {result[2]} -- {result[2]}")
                 return None
-            return Annotation(result[0], item_id, type, result[1], result[2], result[3], result[4], result[5])
 
     def store_annotation(self, annotation: Annotation) -> str:
         """
@@ -247,11 +301,16 @@ class NavidromeDb:
         """
         query = None
         args = None
-        pd = annotation.play_date.strftime("%Y-%m-%d %H:%M:%S") if annotation.play_date else None  # YYYY-MM-DD 24:mm:ss
-        starred_at = annotation.starred_at.strftime("%Y-%m-%d %H:%M:%S") if annotation.starred_at else None
+
+        # Dates are in the format `YYYY-MM-DD 24:mm:ss`
+        pd = DU.format_date(annotation.play_date)
+        starred_at = DU.format_date(annotation.starred_at)
 
         if annotation.id:
-            query = "UPDATE annotation SET play_count = ?, play_date = ?, rating = ?, starred = ?, starred_at = ? WHERE user_id = ? AND item_id = ? AND item_type = ?"
+            query = """
+                UPDATE annotation SET play_count = ?, play_date = ?, rating = ?, starred = ?, starred_at = ? 
+                WHERE user_id = ? AND item_id = ? AND item_type = ?
+            """
             args = (
                 annotation.play_count,
                 pd,
@@ -264,7 +323,6 @@ class NavidromeDb:
             )
         else:
             annotation.id = self.generate_annotation_id()
-            # Annotation columns: ann_id, user_id, item_id, item_type, play_count, play_date, rating, starred, starred_at
             query = """
                 INSERT INTO annotation (ann_id, user_id, item_id, item_type, play_count, play_date, rating, starred, starred_at) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -281,7 +339,7 @@ class NavidromeDb:
                 starred_at,
             )
 
-        with NavidromeDbConnection(debug=True) as conn:
+        with NavidromeDbConnection() as conn:
             cur = conn.cursor()
             cur.execute(
                 query,

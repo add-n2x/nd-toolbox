@@ -77,7 +77,7 @@ class DuplicateProcessor:
         """
         self._replace_base_path()
         self._query_media_data()
-        self._merge_annotation_list(processor.dups_media_files)
+        self._merge_annotation_list()
         self._save_all_annotations()
 
     def _replace_base_path(self):
@@ -125,19 +125,18 @@ class DuplicateProcessor:
         self._print_stats()
         self._export_errors()
 
-    def _merge_annotation_list(self, duplicate_media_files: list):
+    def _merge_annotation_list(self):
         """
-        Merge all data of media file annotations.
-
-        Args:
-            duplicate_media_files ([]): A list of duplicates.
+        Merge data of all media file annotations referred to as duplicates.
         """
-        if not duplicate_media_files or len(duplicate_media_files) < 2:
-            PU.red("No duplicates to merge annotations.")
-            return
-        PU.print(f"Merging annotations for {len(duplicate_media_files)} duplicates...")
-        for dup in duplicate_media_files[1 : len(duplicate_media_files)]:
-            self._merge_annotation_data(duplicate_media_files[0], dup)
+        for key, dups in self.dups_media_files.items():
+            PU.green(f"Merging {key} with {len(dups)} duplicates...")
+            if len(dups) < 2:
+                PU.orange("> No duplicates to be merged. Skipping.", 1)
+                continue
+            for dup in dups[1 : len(dups)]:
+                self._merge_annotation_data(dups[0], dup)
+            PU.green("> Merged successfully.", 1)
 
     def _merge_annotation_data(self, a: MediaFile, b: MediaFile):
         """
@@ -152,10 +151,11 @@ class DuplicateProcessor:
             aa.play_count += int(ba.play_count)
             ba.play_count = aa.play_count
             PU.print(f"Combined play count: {aa.play_count}", 1)
-            if aa.play_date > ba.play_date:
-                ba.play_date = aa.play_date
-            else:
-                aa.play_date = ba.play_date
+            if aa.play_date and ba.play_date:
+                if aa.play_date > ba.play_date:
+                    ba.play_date = aa.play_date
+                else:
+                    aa.play_date = ba.play_date
             PU.print(f"Updated play date: {aa.play_date}", 1)
 
             # Keep the better rating
@@ -183,8 +183,9 @@ class DuplicateProcessor:
         """
         Save all annotations of all media file duplicates to the database.
         """
-        for media in self.dups_media_files:
-            self.db.store_annotation(media.annotation)
+        for _, dups in self.dups_media_files.items():
+            for media in dups:
+                self.db.store_annotation(media.annotation)
 
     def _log_info(self, file_path: str, media: MediaFile):
         """
