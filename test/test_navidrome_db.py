@@ -1,65 +1,78 @@
-import pytest
+"""Test cases for the NavidromeDb class."""
 
 from datetime import datetime
-from ndtools.db import NavidromeDb, Annotation
+
+import pytest
+
+from ndtools.db import Annotation, NavidromeDb
+from ndtools.model import Album, Artist, MediaFile
 from ndtools.utils import DotDict
 
 # Example data to use for testing
 TEST_DB_PATH = "config/navidrome/navidrome.db"
 TEST_USER_ID = "b65d5135-ca67-4534-8014-d0f7c2d8e65a"
 
-test_media_file = DotDict(
-    {
-        "path": "/music/library/Venetian Snares/rossz csillag allat szuletett/oengyilkos vasarnap.mp3",
-        "id": "151e12ac667484745301625483d71399",
-        "title": "Öngyilkos vasárnap",
-        "year": 2005,
-        "track_number": 3,
-        "duration": 206.2100067138672,
-        "bitrate": 160,
-    }
+test_media_file = MediaFile(
+    id="111",
+    path="/music/foobar/dummy1.mp3",
+    title="Foo Bar",
+    year=2005,
+    track_number=3,
+    duration=200,
+    bitrate=160,
+    artist_id=None,
+    album_id=None,
+    mbz_recording_id=None,
 )
 
-test_anno = DotDict(
-    {
-        "id": "4ac94a1b-c33a-f613-34dc-75965fa54c55",
-        "item_id": "151e12ac667484745301625483d71399",
-        "play_count": 1,
-        "play_date": "2013-04-18 00:33:37",
-        "rating": 0,
-        "starred": False,
-        "starred_at": None,
-    }
+test_anno = Annotation(
+    id="4af84a1b-c33a-f613-34dc-75965fa54c55",
+    item_type=Annotation.Type.media_file,
+    item_id="111",
+    play_count=1,
+    play_date="2013-04-18 00:13:37",
+    rating=0,
+    starred=False,
+    starred_at=None,
 )
 
 
 @pytest.fixture(scope="session")
 def db():
+    """Fixture to provide a database connection for tests."""
     db = NavidromeDb(db_path=TEST_DB_PATH)
     yield db
 
 
 def test_init_user(db):
+    """Test the initialization of user ID."""
     # Verify that the user ID is correctly initialized
     assert db.user_id == TEST_USER_ID
 
 
 def test_generate_annotation_id():
-    # Verify that generated IDs are strings and have the expected format
+    """Test the generation of a new annotation ID."""
     annotation_id = NavidromeDb.generate_annotation_id()
+    # Verify that generated IDs are strings and have the expected format
     assert isinstance(annotation_id, str)
     assert len(annotation_id) == 36
 
 
-def test_get_media(db):
-    db = NavidromeDb(TEST_DB_PATH)
+def test_get_media(db, mocker):
+    """Test the retrieval of a media file from the database."""
+    # Mock the database query to return a specific media file and annotation
+    mocker.patch.object(db, "get_media_file", autospec=True)
+    db.get_media_file.return_value = test_media_file
+    mocker.patch.object(db, "get_media_annotation")
+    db.get_media_annotation.return_value = test_anno
+
+    # Retrieve the media file from the database
     media_file = db.get_media(test_media_file.path)
 
     print(f"Media file: {media_file}")
     print(f"File annotation: {media_file.annotation}")
-    print(f"Artist annotation: {media_file.artist.annotation}")
-    print(f"Album annotation: {media_file.album.annotation}")
 
+    # Verify that the media file is correctly retrieved and its attributes match the expected values
     assert media_file is not None
     assert media_file.id == test_media_file.id
     assert media_file.path == test_media_file.path
@@ -80,12 +93,14 @@ def test_get_media(db):
 
 
 def test_get_invalid_annotation(db):
+    """Test retrieving an invalid annotation."""
     # Attempt to retrieve an annotation that does not exist
     invalid_anno = db.get_annotation(1000, Annotation.Type.album)
     assert invalid_anno is None
 
 
 def test_store_annotation(db):
+    """Test storing an annotation."""
     # Delete any existing annotations with item_id 999
     db.delete_annotation("999", Annotation.Type.album)
 

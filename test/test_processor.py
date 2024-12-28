@@ -1,7 +1,9 @@
+"""Test module for the DuplicateProcessor class."""
+
 import pytest
 
+from ndtools.app import DuplicateProcessor
 from ndtools.db import NavidromeDb
-from ndtools.list import DuplicateProcessor
 from ndtools.model import Annotation, MediaFile
 
 TEST_DB_PATH = "config/navidrome/navidrome.db"
@@ -11,18 +13,15 @@ NAVIDROME_BASE_PATH = "/music/library"
 
 
 @pytest.fixture(scope="session")
-def db():
-    db = NavidromeDb(db_path=TEST_DB_PATH)
-    yield db
-
-
-@pytest.fixture(scope="session")
 def processor():
+    """Fixture to create a DuplicateProcessor instance."""
+    db = NavidromeDb(db_path=TEST_DB_PATH)
     processor = DuplicateProcessor(db, DIR_OUTPUT, BEETS_BASE_PATH, NAVIDROME_BASE_PATH)
     yield processor
 
 
 def test_merge_annotation_data(processor):
+    """Test merging annotation data from two MediaFile objects."""
     # Create two MediaFile objects with some annotation data
     a = MediaFile(
         id="1",
@@ -34,6 +33,7 @@ def test_merge_annotation_data(processor):
         bitrate=320,
         artist_id=0,
         album_id=0,
+        mbz_recording_id="recording-1",
     )
     a.annotation = Annotation(
         id="1a",
@@ -56,6 +56,7 @@ def test_merge_annotation_data(processor):
         bitrate=320,
         artist_id=0,
         album_id=0,
+        mbz_recording_id="recording-2",
     )
     b.annotation = Annotation(
         id="2",
@@ -78,6 +79,7 @@ def test_merge_annotation_data(processor):
 
 
 def test_merge_annotation_list(processor):
+    """Test the merge_annotation_list method."""
     # Create a list of four Media files with annotations
     files = [
         MediaFile(
@@ -90,6 +92,7 @@ def test_merge_annotation_list(processor):
             bitrate=320,
             artist_id=0,
             album_id=0,
+            mbz_recording_id="recording-1",
         ),
         MediaFile(
             id="2",
@@ -101,6 +104,7 @@ def test_merge_annotation_list(processor):
             bitrate=320,
             artist_id=0,
             album_id=0,
+            mbz_recording_id="recording-2",
         ),
         MediaFile(
             id="3",
@@ -112,6 +116,7 @@ def test_merge_annotation_list(processor):
             bitrate=320,
             artist_id=0,
             album_id=0,
+            mbz_recording_id="recording-3",
         ),
         MediaFile(
             id="4",
@@ -123,6 +128,7 @@ def test_merge_annotation_list(processor):
             bitrate=320,
             artist_id=0,
             album_id=0,
+            mbz_recording_id="recording-3",
         ),
     ]
     # Set annotations for each file
@@ -138,7 +144,9 @@ def test_merge_annotation_list(processor):
             starred_at="2022-01-01",
         )
 
-    processor._merge_annotation_list(files)
+    # Set up the processor with the test files
+    processor.dups_media_files = {"key123": files}
+    processor._merge_annotation_list()
 
     assert files[0].annotation.play_count == 9
     assert files[0].annotation.rating == 4
