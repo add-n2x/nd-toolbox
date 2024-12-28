@@ -11,7 +11,7 @@ from dotenv import find_dotenv, load_dotenv
 
 from ndtools.db import NavidromeDb
 from ndtools.model import MediaFile
-from ndtools.utils import DotDict
+from ndtools.utils import CLI, DotDict
 from ndtools.utils import PrintUtils as PU
 
 
@@ -77,6 +77,12 @@ class DuplicateProcessor:
         """
         self._replace_base_path()
         self._query_media_data()
+        self._print_stats()
+        self._export_errors()
+        if len(self.errors) > 0:
+            PU.red("Errors encountered during processing. Please review the error log.")
+            PU.red("Do you want to continue anyway (not recommended)?")
+            CLI.ask_continue()
         self._merge_annotation_list()
         self._save_all_annotations()
 
@@ -122,8 +128,6 @@ class DuplicateProcessor:
                 media: MediaFile = db.get_media(file)
                 self.dups_media_files[key].append(media)
                 self._log_info(file, media)
-        self._print_stats()
-        self._export_errors()
 
     def _merge_annotation_list(self):
         """
