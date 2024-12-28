@@ -92,6 +92,7 @@ class Album:
     artist_id: str
     song_count: int
     annotation: Optional[Annotation]
+    has_keepable: bool
 
     def __init__(self, id: str, name: str, artist_id: str, song_count: int):
         """Init instance."""
@@ -99,6 +100,7 @@ class Album:
         self.name = name
         self.artist_id = artist_id
         self.song_count = song_count
+        self.has_keepable = False
 
     def __repr__(self) -> str:
         """Instance representation."""
@@ -121,6 +123,8 @@ class MediaFile:
        artist (Artist): The artist of the media file.
        album_id (str): The foreign key referencing the album of the media file.
        album (Album): The album of the media file.
+       mbz_recording_id (str): The MusicBrainz recording ID of the media file.
+       has_keepable (bool): Indicates whether some of its media files is keepable.
     """
 
     id: str
@@ -135,6 +139,8 @@ class MediaFile:
     artist: Artist
     album_id: Optional[str]  # foreign key
     album: Album
+    mbz_recording_id: str
+    has_keepable: bool
 
     def __init__(
         self,
@@ -147,6 +153,7 @@ class MediaFile:
         bitrate: int,
         artist_id: str,
         album_id: str,
+        mbz_recording_id: str,
     ):
         """Init instance."""
         self.id = id
@@ -155,10 +162,13 @@ class MediaFile:
         self.year = year
         self.track_number = track_number
         self.duration = duration
-        self.bitrate = bitrate
+        self.bitrate = int(bitrate)
         self.artist_id = artist_id
         self.album_id = album_id
+        self.mbz_recording_id = mbz_recording_id
+        self.annotation = None
+        self.has_keepable = False
 
     def __repr__(self):
         """Instance representation."""
-        return f"MediaFile(id={self.id}, path={self.path}, title={self.title}, year={self.year}, track_number={self.track_number}, duration={self.duration}, bitrate={self.bitrate}, artist_id={self.artist_id}, album_id={self.album_id})"
+        return f"MediaFile(id={self.id}, path={self.path}, title={self.title}, year={self.year}, track_number={self.track_number}, duration={self.duration}, bitrate={self.bitrate}, artist_id={self.artist_id}, album_id={self.album_id}, mbz_recording_id={self.mbz_recording_id})"

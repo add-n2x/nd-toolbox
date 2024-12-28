@@ -69,7 +69,15 @@ class DuplicateProcessor:
 
         # Init logging objects.
         self.errors = []
-        self.stats = DotDict({"duplicate_records": 0, "duplicate_files": 0, "media_files": 0, "file_annotations": 0})
+        self.stats = DotDict(
+            {
+                "duplicate_records": 0,
+                "duplicate_files": 0,
+                "media_files": 0,
+                "file_annotations": 0,
+                "media_files_deletable": 0,
+            }
+        )
 
     def merge_and_store_annotations(self):
         """
@@ -77,14 +85,133 @@ class DuplicateProcessor:
         """
         self._replace_base_path()
         self._query_media_data()
-        self._print_stats()
-        self._export_errors()
+        PU.print("---------------------------------------------------------------------------------------------")
         if len(self.errors) > 0:
             PU.red("Errors encountered during processing. Please review the error log.")
             PU.red("Do you want to continue anyway (not recommended)?")
             CLI.ask_continue()
         self._merge_annotation_list()
         self._save_all_annotations()
+        PU.print("---------------------------------------------------------------------------------------------")
+        self.eval_deletable_duplicates()
+        PU.print("---------------------------------------------------------------------------------------------")
+
+    def eval_deletable_duplicates(self):
+        """
+        Detect deletable duplicate files based on the provided criteria.
+        """
+        for key, dups in self.dups_media_files.items():
+            PU.bold(f"\nEvaluating {len(dups)} duplicates for: {key}")
+            # Get the list of deletable media files based on criteria
+            keepable: list[MediaFile] = self._get_keepable_media(dups)
+            if not keepable:
+                self.errors.append({"error": "No keepable media found for {key}", "dups": dups})
+                PU.red("No keepable media found for this group. All duplicates will be marked as deletable.")
+
+    def delete_duplicates(self):
+        """
+        Delete duplicate files from the Navidrome database and from the file system.
+        """
+        pass
+
+    def _get_keepable_media(self, dups: list[MediaFile]) -> MediaFile:
+        """
+        Recursively determine which file is keepable based on the criteria.
+
+        Args:
+            dups (MediaFile): A list of duplicate media files to evaluate for a keepable.
+
+        Returns:
+            MediaFile: The media file to keep.
+        """
+
+        # Define the criteria for keepable media
+        def is_keepable(this: MediaFile, that: MediaFile) -> MediaFile:
+            PU.print(f"COMPARING {this.path} <=> {that.path}", 1)
+
+            # If the files album already contains a keepable, we wanna keep all the items
+            left = this.album and this.album.has_keepable
+            right = that.album and that.album.has_keepable
+            PU.print(f"Compare if albums contain a keepable: {left} || {right}", 1)
+            if left != right:
+                if left:
+                    return this
+                elif right:
+                    return that
+            # Skip, if they are the same
+
+            # Having a MusicBrainz recording ID is keepable
+            left = this.mbz_recording_id is not None
+            right = that.mbz_recording_id is not None
+            PU.print(f"Compare MusicBrainz recording ID: {left} || {right}", 1)
+            if left != right:
+                if left:
+                    return this
+                elif right:
+                    return that
+            # Skip, if they are the same
+
+            # Having track numbers is keepable
+            left = this.track_number > 0
+            right = that.track_number > 0
+            PU.print(f"Compare track numbers: {left} || {right}", 1)
+            if left != right:
+                if left:
+                    return this
+                elif right:
+                    return that
+            # Skip, if they are the same
+
+            # Higher bitrate is keepable
+            left = this.bitrate
+            right = that.bitrate
+            PU.print(f"Compare bitrate: {left} || {right}", 1)
+            if left > right:
+                return this
+            elif left < right:
+                return that
+            # Skip, if they are the same
+
+            # Year info is keepable
+            left = this.year and this.year > 0
+            right = that.year and this.year > 0
+            PU.print(f"Compare year info: {left} || {right}", 1)
+            if left != right:
+                if left:
+                    return this
+                elif right:
+                    return that
+            # Skip, if they are the same
+
+            # If no conditition matches, it doesn't matter which one we take
+            PU.warn("No condition matched, keeping the other one (that)")
+            self.errors.append({"warning": "No condition matched, keeping 'that'", "this": this, "that": that})
+            return that
+
+        if len(dups) == 1:
+            PU.green(f"Found keepable: {dups[0]}", 1)
+            dups[0].album.keepable = True
+            return dups[0]
+        else:
+            # Get the last item of the dups list:
+            this = dups[-1]
+            that = dups[-2]
+            keepable = is_keepable(this, that)
+            removed: MediaFile = None
+
+            child_dups: list[MediaFile] = dups[:-2]
+            if keepable == this:
+                child_dups.append(this)
+                removed = that
+            else:
+                child_dups.append(that)
+                removed = this
+
+            keepable.album.has_keepable = True
+            removed.deletable = True
+            self.stats.media_files_deletable += 1
+            PU.print(f"Deletable: {removed}", 1)
+            return self._get_keepable_media(child_dups)
 
     def _replace_base_path(self):
         """
@@ -219,7 +346,7 @@ class DuplicateProcessor:
             self.errors.append({"error": "media file not found", "path": file_path})
             PU.red("└───── Media file not found in database!", 1)
 
-    def _print_stats(self):
+    def print_stats(self):
         PU.print("")
         PU.print("-----------------------------------------------------")
         PU.green(" STATISTICS")
@@ -232,12 +359,13 @@ class DuplicateProcessor:
         PU.green(" Media files:")
         PU.green(f"     Found: {self.stats.media_files}")
         PU.green(f"     Annotations: {self.stats.file_annotations}")
+        PU.green(f"     Deletables: {self.stats.media_files_deletable}")
         PU.print("")
         PU.green(f" Artists: {len(self.db.artists)}")
         PU.green(f" Albums: {len(self.db.albums)}")
         PU.print("")
 
-    def _export_errors(self):
+    def export_errors(self):
         PU.print("-----------------------------------------------------")
         PU.green(" ERRORS")
         PU.print("-----------------------------------------------------")
@@ -281,5 +409,11 @@ if __name__ == "__main__":
 
     if action == "merge-annotations":
         processor.merge_and_store_annotations()
+        processor.print_stats()
+        processor.export_errors()
+    elif action == "eval-deletable-duplicates":
+        processor.eval_deletable_duplicates()
+    elif action == "delete-duplicates":
+        processor.delete_duplicates()
     else:
         PU.red(f"{action}: Invalid action specified")
