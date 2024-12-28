@@ -67,6 +67,16 @@ class PrintUtils:
         print(" " * 6 * lvl + text)
 
     @staticmethod
+    def println(text, lvl=0):
+        """Print with new line an normal text with indentation based on level."""
+        print("\n" + " " * 6 * lvl + text)
+
+    @staticmethod
+    def bold(text, lvl=0):
+        """Print bold text with indentation based on level."""
+        print(TerminalColors.BOLD.value + text + TerminalColors.RESET.value, lvl)
+
+    @staticmethod
     def red(text, lvl=0):
         """Print red text with indentation based on level."""
         PrintUtils.print(TerminalColors.RED.value + text + TerminalColors.RESET.value, lvl)
