@@ -12,7 +12,6 @@ class Annotation:
     Annotation class to represent an annotation database table.
 
     Attributes:
-        id (str): The unique identifier for the annotation.
         item_id (str): The identifier of the item being annotated. Depending on the `item_type` it holds either the ID
             of an artist, track or album.
         item_type (str): The type of the item being annotated. Either a artist, track or an album.
@@ -30,7 +29,6 @@ class Annotation:
         artist = "artist_id"
         album = "album_id"
 
-    id: str
     item_id: str
     item_type: Type
     play_count: int
@@ -41,7 +39,6 @@ class Annotation:
 
     def __init__(
         self,
-        id: str,
         item_id: str,
         item_type: Type,
         play_count: int,
@@ -51,7 +48,6 @@ class Annotation:
         starred_at: datetime,
     ):
         """Init instance."""
-        self.id = id
         self.item_id = item_id
         self.item_type = item_type
         self.play_count = play_count
@@ -62,7 +58,7 @@ class Annotation:
 
     def __repr__(self) -> str:
         """Instance representation."""
-        return f"Annotation(id={self.id}, item_id={self.item_id}, play_count={self.play_count}, play_date={self.play_date}, rating={self.rating}, starred={self.starred}, starred_at={self.starred_at})"
+        return f"Annotation(item_id={self.item_id}, play_count={self.play_count}, play_date={self.play_date}, rating={self.rating}, starred={self.starred}, starred_at={self.starred_at})"
 
 
 class Artist:

@@ -117,7 +117,6 @@ class NavidromeDb:
             # If no annotation exists, create one
             if not media.annotation:
                 media.annotation = Annotation(
-                    id=None,
                     item_id=media.id,
                     item_type=Annotation.Type.media_file,
                     play_count=0,
@@ -200,7 +199,6 @@ class NavidromeDb:
         # If no annotation exists, create one
         if not artist.annotation:
             artist.annotation = Annotation(
-                id=None,
                 item_id=artist.id,
                 item_type=Annotation.Type.artist,
                 play_count=0,
@@ -233,7 +231,6 @@ class NavidromeDb:
         # If no annotation exists, create one
         if not album.annotation:
             album.annotation = Annotation(
-                id=None,
                 item_id=album.id,
                 item_type=Annotation.Type.album,
                 play_count=0,
@@ -270,7 +267,7 @@ class NavidromeDb:
            Annotation: The annotation object for the given media file and type, if existing.
         """
         query = """
-            SELECT ann_id, play_count, play_date, rating, starred, starred_at 
+            SELECT play_count, play_date, rating, starred, starred_at 
             FROM annotation 
             WHERE user_id LIKE ? and item_id LIKE ? and item_type LIKE ?
         """
@@ -284,69 +281,45 @@ class NavidromeDb:
                 if not result:
                     return None
                 return Annotation(
-                    result[0],
                     item_id,
                     type,
-                    result[1],
-                    DU.parse_date(result[2]),
+                    result[0],
+                    DU.parse_date(result[1]),
+                    result[2],
                     result[3],
-                    result[4],
-                    DU.parse_date(result[5]),
+                    DU.parse_date(result[4]),
                 )
 
             except Exception as e:
-                print(f"Error fetching annotation: {e} -- {result[2]} -- {result[2]}")
+                print(f"Error fetching annotation: {e} -- {result[0]} -- {result[1]}")
                 return None
 
-    def store_annotation(self, annotation: Annotation) -> str:
+    def store_annotation(self, annotation: Annotation):
         """
         Adds an annotation to the database. If the annotation already exists, it will be updated.
 
         Args:
             annotation (Annotation): The annotation object to be added or updated.
-
-        Returns:
-           str: The ID of the stored annotation. If an existing annotation was updated, it will return the same ID.
         """
-        query = None
-        args = None
-
         # Dates are in the format `YYYY-MM-DD 24:mm:ss`
         pd = DU.format_date(annotation.play_date)
         starred_at = DU.format_date(annotation.starred_at)
 
-        if annotation.id:
-            query = """
-                UPDATE annotation SET play_count = ?, play_date = ?, rating = ?, starred = ?, starred_at = ? 
-                WHERE user_id = ? AND item_id = ? AND item_type = ?
-            """
-            args = (
-                annotation.play_count,
-                pd,
-                annotation.rating,
-                annotation.starred,
-                starred_at,
-                self.user_id,
-                annotation.item_id,
-                annotation.item_type.name,
-            )
-        else:
-            annotation.id = self.generate_annotation_id()
-            query = """
-                INSERT INTO annotation (ann_id, user_id, item_id, item_type, play_count, play_date, rating, starred, starred_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """
-            args = (
-                annotation.id,
-                self.user_id,
-                annotation.item_id,
-                annotation.item_type.name,
-                annotation.play_count,
-                pd,
-                annotation.rating,
-                annotation.starred,
-                starred_at,
-            )
+        query = """
+            INSERT OR REPLACE INTO 
+            annotation (user_id, item_id, item_type, play_count, play_date, rating, starred, starred_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        args = (
+            self.user_id,
+            annotation.item_id,
+            annotation.item_type.name,
+            annotation.play_count,
+            pd,
+            annotation.rating,
+            annotation.starred,
+            starred_at,
+        )
 
         with NavidromeDbConnection() as conn:
             cur = conn.cursor()
@@ -355,7 +328,6 @@ class NavidromeDb:
                 args,
             )
             conn.commit()
-        return annotation.id
 
     def delete_annotation(self, item_id: int, item_type: Annotation.Type):
         """
@@ -372,18 +344,3 @@ class NavidromeDb:
                 (item_id, item_type.name, self.user_id),
             )
             conn.commit()
-
-    @staticmethod
-    def generate_annotation_id() -> str:
-        """
-        Generates a random UUID-like string. This is used to create unique identifiers for annotations.
-
-        Returns:
-            str: UUID-like string.
-        """
-        character_pool = string.hexdigits[:16]
-
-        id_elements = []
-        for char_count in (8, 4, 4, 4, 12):
-            id_elements.append("".join(random.choice(character_pool) for i in range(char_count)))
-        return "-".join(id_elements)
