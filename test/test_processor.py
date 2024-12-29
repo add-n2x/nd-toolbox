@@ -36,7 +36,6 @@ def test_merge_annotation_data(processor):
         mbz_recording_id="recording-1",
     )
     a.annotation = Annotation(
-        id="1a",
         item_id="1",
         item_type=Annotation.Type.media_file,
         play_count=10,
@@ -59,7 +58,6 @@ def test_merge_annotation_data(processor):
         mbz_recording_id="recording-2",
     )
     b.annotation = Annotation(
-        id="2",
         item_id="2",
         item_type=Annotation.Type.media_file,
         play_count=5,
@@ -134,7 +132,6 @@ def test_merge_annotation_list(processor):
     # Set annotations for each file
     for f in files:
         f.annotation = Annotation(
-            id=f"a{f.id}",
             item_id=f.id,
             item_type=Annotation.Type.media_file,
             play_count=f.id if int(f.id) > 1 else 0,  # File 1 has no play count, others have 2, 3 and 4 plays

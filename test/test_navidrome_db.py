@@ -5,8 +5,7 @@ from datetime import datetime
 import pytest
 
 from ndtools.db import Annotation, NavidromeDb
-from ndtools.model import Album, Artist, MediaFile
-from ndtools.utils import DotDict
+from ndtools.model import MediaFile
 
 # Example data to use for testing
 TEST_DB_PATH = "config/navidrome/navidrome.db"
@@ -26,7 +25,6 @@ test_media_file = MediaFile(
 )
 
 test_anno = Annotation(
-    id="4af84a1b-c33a-f613-34dc-75965fa54c55",
     item_type=Annotation.Type.media_file,
     item_id="111",
     play_count=1,
@@ -48,14 +46,6 @@ def test_init_user(db):
     """Test the initialization of user ID."""
     # Verify that the user ID is correctly initialized
     assert db.user_id == TEST_USER_ID
-
-
-def test_generate_annotation_id():
-    """Test the generation of a new annotation ID."""
-    annotation_id = NavidromeDb.generate_annotation_id()
-    # Verify that generated IDs are strings and have the expected format
-    assert isinstance(annotation_id, str)
-    assert len(annotation_id) == 36
 
 
 def test_get_media(db, mocker):
@@ -83,7 +73,6 @@ def test_get_media(db, mocker):
     assert media_file.bitrate == test_media_file.bitrate
 
     anno: Annotation = media_file.annotation
-    assert anno.id == test_anno.id
     assert anno.item_id == test_anno.item_id
     assert anno.play_count == test_anno.play_count
     assert anno.play_date == test_anno.play_date
@@ -99,14 +88,13 @@ def test_get_invalid_annotation(db):
     assert invalid_anno is None
 
 
-def test_store_annotation(db):
+def test_store_annotation(db: NavidromeDb):
     """Test storing an annotation."""
     # Delete any existing annotations with item_id 999
     db.delete_annotation("999", Annotation.Type.album)
 
-    # Create a new annotation object, without specifying an ID (let the DAO generate it)
+    # Create a new annotation object
     new_anno = Annotation(
-        id=None,
         item_id="999",
         item_type=Annotation.Type.album,
         play_count=5,
@@ -116,8 +104,7 @@ def test_store_annotation(db):
         starred_at=datetime.now(),
     )
     # Store the annotation in the database
-    anno_id = db.store_annotation(new_anno)
-    assert anno_id is not None
+    db.store_annotation(new_anno)
     # Retrieve the stored annotation to verify it was saved correctly
     stored_anno = db.get_annotation("999", Annotation.Type.album)
 
