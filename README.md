@@ -8,6 +8,7 @@ And other little helpers for Navidrome Music Server.
 
 ## Prerequisites
 
+- Navidrome Music Server 0.53.0 or later
 - [Poetry](https://python-poetry.org/)
 
 Create an `.env` file based on the sample:
