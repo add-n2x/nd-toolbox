@@ -28,12 +28,23 @@ class DateUtil:
 class CLI:
     """Terminal dialog asking to continue or exit."""
 
-    def ask_continue():
-        """Ask to continue or exit."""
-        _ = input("Type (c) to continue, any key to quit: ").lower()
-        if _ != "c":
-            print("Good bye.")
-            sys.exit(0)
+    @staticmethod
+    def ask_continue(key: str = "c", message: str = "Type (c) to continue, any key to quit: ", exit: bool = True):
+        """
+        Ask to continue or exit.
+
+        Args:
+            key (str): The key to press to continue. Defaults to "c".
+            message (str): The message to display. Defaults to "Type (c) to continue, any key to quit: ".
+            exit (bool): Whether to exit the program if the key is not pressed. Defaults to True.
+        """
+        _ = input(message).lower()
+        if _ != key:
+            if exit:
+                print("Good bye.")
+                sys.exit(0)
+            return False
+        return True
 
 
 class TerminalColors(Enum):
