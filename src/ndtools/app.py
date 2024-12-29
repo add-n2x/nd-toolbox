@@ -7,6 +7,7 @@ import os
 import sys
 import unicodedata
 
+import jsonpickle
 from dotenv import find_dotenv, load_dotenv
 
 from ndtools.db import NavidromeDb
@@ -86,12 +87,21 @@ class DuplicateProcessor:
         self._replace_base_path()
         self._query_media_data()
         PU.print("---------------------------------------------------------------------------------------------")
+
+        # Check for errors before proceeding. If there are errors, ask the user if they want to continue.
         if len(self.errors) > 0:
             PU.red("Errors encountered during processing. Please review the error log.")
             PU.red("Do you want to continue anyway (not recommended)?")
             CLI.ask_continue()
-        self._merge_annotation_list()
-        self._save_all_annotations()
+
+        # Ask user if they want to continue with merging and storing annotations.
+        if CLI.ask_continue(
+            "m",
+            "Do you want to continue with merging and storing annotations? Press 'm' or any other key to skip.",
+            exit=False,
+        ):
+            self._merge_annotation_list()
+            self._save_all_annotations()
         PU.print("---------------------------------------------------------------------------------------------")
         self.eval_deletable_duplicates()
         PU.print("---------------------------------------------------------------------------------------------")
@@ -102,11 +112,13 @@ class DuplicateProcessor:
         """
         for key, dups in self.dups_media_files.items():
             PU.bold(f"\nEvaluating {len(dups)} duplicates for: {key}")
-            # Get the list of deletable media files based on criteria
-            keepable: list[MediaFile] = self._get_keepable_media(dups)
-            if not keepable:
-                self.errors.append({"error": "No keepable media found for {key}", "dups": dups})
-                PU.red("No keepable media found for this group. All duplicates will be marked as deletable.")
+            keepable = self._get_keepable_media(dups)
+            PU.green(f"Found keepable: {keepable}", 1)
+
+        file_path = self.output_folder + "/duplicates-with-keepers.json"
+        with open(file_path, "w", encoding="utf-8") as file:
+            file.write(jsonpickle.encode(self.dups_media_files, indent=4))
+        print(f"Stored deletables and keepers to '{file_path}'")
 
     def delete_duplicates(self):
         """
@@ -189,7 +201,7 @@ class DuplicateProcessor:
             return that
 
         if len(dups) == 1:
-            PU.green(f"Found keepable: {dups[0]}", 1)
+            # Keepable if there is only one duplicate
             dups[0].album.keepable = True
             return dups[0]
         else:
