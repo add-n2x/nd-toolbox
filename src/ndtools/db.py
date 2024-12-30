@@ -2,9 +2,7 @@
 Navidrome database classes.
 """
 
-import random
 import sqlite3
-import string
 
 from ndtools.model import Album, Annotation, Artist, MediaFile
 from ndtools.utils import DateUtil as DU
@@ -86,7 +84,7 @@ class NavidromeDb:
             cur.execute("SELECT id, user_name FROM user")
             users = cur.fetchall()
             if len(users) == 1:
-                PU.green(f"Using Navidrome account '{users[0][1]}'.")
+                PU.green(f"Using Navidrome account '{users[0][1]}'.\n")
             else:
                 raise Exception(
                     """
@@ -267,8 +265,8 @@ class NavidromeDb:
            Annotation: The annotation object for the given media file and type, if existing.
         """
         query = """
-            SELECT play_count, play_date, rating, starred, starred_at 
-            FROM annotation 
+            SELECT play_count, play_date, rating, starred, starred_at
+            FROM annotation
             WHERE user_id LIKE ? and item_id LIKE ? and item_type LIKE ?
         """
 
@@ -277,22 +275,17 @@ class NavidromeDb:
             cursor.execute(query, (self.user_id, str(item_id), str(type.name)))
             result = cursor.fetchone()
 
-            try:
-                if not result:
-                    return None
-                return Annotation(
-                    item_id,
-                    type,
-                    result[0],
-                    DU.parse_date(result[1]),
-                    result[2],
-                    result[3],
-                    DU.parse_date(result[4]),
-                )
-
-            except Exception as e:
-                print(f"Error fetching annotation: {e} -- {result[0]} -- {result[1]}")
+            if not result:
                 return None
+            return Annotation(
+                item_id,
+                type,
+                result[0],
+                DU.parse_date(result[1]),
+                result[2],
+                result[3],
+                DU.parse_date(result[4]),
+            )
 
     def store_annotation(self, annotation: Annotation):
         """
