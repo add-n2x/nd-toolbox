@@ -32,7 +32,7 @@ COPY . /app/
 # Linux Server conventions
 RUN ln -s /app/config /config
 RUN ln -s /app/music /music
-RUN ln -s /app/output /output
+RUN ln -s /app/data /data
 
 # Init application
 WORKDIR /app

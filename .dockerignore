@@ -5,7 +5,7 @@
 /config/navidrome/**
 !/config/navidrome/.gitkeep
 /music
-/output/**
-!/output/.gitkeep
+/data/**
+!/data/.gitkeep
 /test
 __pycache__

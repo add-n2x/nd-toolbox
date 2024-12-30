@@ -5,7 +5,7 @@ import pytest
 from ndtoolbox.app import DuplicateProcessor
 from ndtoolbox.model import Annotation, MediaFile
 
-DIR_OUTPUT = "./output"
+DATA_DIR = "./data"
 BEETS_BASE_PATH = "/app/music"
 NAVIDROME_BASE_PATH = "/music/library"
 CONFIG_DIR = "config"
@@ -14,7 +14,7 @@ CONFIG_DIR = "config"
 @pytest.fixture(scope="session")
 def processor():
     """Fixture to create a DuplicateProcessor instance."""
-    processor = DuplicateProcessor(CONFIG_DIR, DIR_OUTPUT, BEETS_BASE_PATH, NAVIDROME_BASE_PATH)
+    processor = DuplicateProcessor(CONFIG_DIR, DATA_DIR, BEETS_BASE_PATH, NAVIDROME_BASE_PATH)
     yield processor
 
 

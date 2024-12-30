@@ -10,7 +10,7 @@ from enum import Enum
 import colorlog
 
 # Setup logger
-LOG_FILE = "./output/nd-toolbox.log"
+LOG_FILE = "./data/nd-toolbox.log"
 logger = colorlog.getLogger("ndtoolbox")
 colorlog.basicConfig(
     filename=LOG_FILE,

@@ -13,7 +13,7 @@ BUILD_DATE=$(shell date +%F)
 
 # Container vars
 BEETSDIR = ./config/beets
-BEETSDIR_MUSIC_SOURCE = ./music
+BEETSMUSIC_DIR_SOURCE = ./music
 export
 
 .DEFAULT_GOAL := help
@@ -42,7 +42,7 @@ help::
 ### App targets ###
 
 beet.import::
-	beet import -A $(BEETSDIR_MUSIC_SOURCE)
+	beet import -A $(BEETSMUSIC_DIR_SOURCE)
 beet.duplicatez::
 	beet duplicatez
 beet.reset::
@@ -79,8 +79,8 @@ docker.build::
 		.
 docker.run::
 	docker run --rm -it  \
-		-v $(DIR_CONFIG):/app/config  \
-		-v $(DIR_MUSIC):/app/music  \
-		-v $(DIR_OUTPUT):/app/output  \
+		-v $(CONFIG_DIR):/app/config  \
+		-v $(MUSIC_DIR):/app/music  \
+		-v $(DATA_DIR):/app/data  \
 		-e TZ=${TIMEZONE} \
 		--entrypoint bash nd-toolbox

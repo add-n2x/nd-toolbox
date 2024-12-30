@@ -4,8 +4,8 @@
 /config/navidrome/**
 !/config/navidrome/.gitkeep
 /music
-/output/**
-!/output/.gitkeep
+/data/**
+!/data/.gitkeep
 __pycache__
 .DS_Store
 /.env
