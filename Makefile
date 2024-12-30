@@ -25,6 +25,7 @@ help::
 	@echo "- beet.duplicatez  		: list duplicates with beets and export JSON"
 	@echo "- beet.reset       		: delete beets music library"
 	@echo "- nd.merge-annotations		: read annotations of all duplicates, merge and store them"
+	@echo "- nd.eval-deletable	: evaluate deletable duplicates"
 	@echo
 	@echo "- dev.init			: init app"	
 	@echo "- dev.shell			: start app shell"
@@ -48,7 +49,9 @@ beet.reset::
 	rm config/beets/library.db
 	rm config/beets/state.pickle
 nd.merge-annotations::
-	poetry run python src/ndtools/app.py action=merge-annotations
+	poetry run python src/ndtoolbox/app.py action=merge-annotations
+nd.eval-deletable::
+	poetry run python src/ndtoolbox/app.py action=eval-deletable
 version::
 	@echo ${VERSION}
 
