@@ -161,7 +161,9 @@ class MediaFile:
         self.duration = duration
         self.bitrate = int(bitrate)
         self.artist_id = artist_id
+        self.artist = None
         self.album_id = album_id
+        self.album = None
         self.mbz_recording_id = mbz_recording_id
         self.annotation = None
         self.has_keepable = False
