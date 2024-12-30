@@ -2,21 +2,19 @@
 
 import pytest
 
-from ndtools.app import DuplicateProcessor
-from ndtools.db import NavidromeDb
-from ndtools.model import Annotation, MediaFile
+from ndtoolbox.app import DuplicateProcessor
+from ndtoolbox.model import Annotation, MediaFile
 
-TEST_DB_PATH = "config/navidrome/navidrome.db"
 DIR_OUTPUT = "./output"
 BEETS_BASE_PATH = "/app/music"
 NAVIDROME_BASE_PATH = "/music/library"
+CONFIG_DIR = "config"
 
 
 @pytest.fixture(scope="session")
 def processor():
     """Fixture to create a DuplicateProcessor instance."""
-    db = NavidromeDb(db_path=TEST_DB_PATH)
-    processor = DuplicateProcessor(db, DIR_OUTPUT, BEETS_BASE_PATH, NAVIDROME_BASE_PATH)
+    processor = DuplicateProcessor(CONFIG_DIR, DIR_OUTPUT, BEETS_BASE_PATH, NAVIDROME_BASE_PATH)
     yield processor
 
 

@@ -4,8 +4,8 @@ from datetime import datetime
 
 import pytest
 
-from ndtools.db import Annotation, NavidromeDb
-from ndtools.model import MediaFile
+from ndtoolbox.db import Annotation, NavidromeDb
+from ndtoolbox.model import MediaFile
 
 # Example data to use for testing
 TEST_DB_PATH = "config/navidrome/navidrome.db"
