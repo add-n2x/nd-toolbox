@@ -58,7 +58,8 @@ class Annotation:
 
     def __repr__(self) -> str:
         """Instance representation."""
-        return f"Annotation(item_id={self.item_id}, play_count={self.play_count}, play_date={self.play_date}, rating={self.rating}, starred={self.starred}, starred_at={self.starred_at})"
+        return f"Annotation(item_id={self.item_id}, play_count={self.play_count}, play_date={self.play_date}, \
+            rating={self.rating}, starred={self.starred}, starred_at={self.starred_at})"
 
 
 class Artist:
@@ -167,4 +168,6 @@ class MediaFile:
 
     def __repr__(self):
         """Instance representation."""
-        return f"MediaFile(id={self.id}, path={self.path}, title={self.title}, year={self.year}, track_number={self.track_number}, duration={self.duration}, bitrate={self.bitrate}, artist_id={self.artist_id}, album_id={self.album_id}, mbz_recording_id={self.mbz_recording_id})"
+        return f"MediaFile(id={self.id}, path={self.path}, title={self.title}, year={self.year}, \
+            track_number={self.track_number}, duration={self.duration}, bitrate={self.bitrate}, \
+            artist_id={self.artist_id}, album_id={self.album_id}, mbz_recording_id={self.mbz_recording_id})"

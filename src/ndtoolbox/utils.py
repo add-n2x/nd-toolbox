@@ -1,10 +1,24 @@
 """
-Utility classes and functions for the ndtools package.
+Utility classes and functions for the ndtoolbox package.
 """
 
+import logging
 import sys
 from datetime import datetime
 from enum import Enum
+
+import colorlog
+
+# Setup logger
+LOG_FILE = "./output/nd-toolbox.log"
+logger = colorlog.getLogger("ndtoolbox")
+colorlog.basicConfig(
+    filename=LOG_FILE,
+    filemode="w",
+    encoding="utf-8",
+    level=logging.INFO,
+    format="%(log_color)s %(msecs)d %(name)s %(levelname)s %(message)s",
+)
 
 
 class DateUtil:
@@ -76,40 +90,66 @@ class PrintUtils:
     """
 
     @staticmethod
-    def print(text, lvl=0):
-        """Print normal text with indentation based on level."""
-        print(" " * 6 * lvl + text)
+    def indent(msg: str, lvl: int = 0) -> str:
+        """Indent a message by a specified number of levels."""
+        return " " * 6 * lvl + msg
 
     @staticmethod
-    def println(thick=False):
+    def ln(thick=False):
         """Print a ASCII line with optional length."""
         c = "─" if not thick else "━"
-        print(c * 120)
+        print(c * 80)
+        logger.info(c * 80)
 
     @staticmethod
-    def bold(text, lvl=0):
+    def bold(msg, lvl=0, log=True):
         """Print bold text with indentation based on level."""
-        PrintUtils.print(TerminalColors.BOLD.value + text + TerminalColors.RESET.value, lvl)
+        msg = TerminalColors.BOLD.value + msg + TerminalColors.RESET.value
+        print(PrintUtils.indent(msg, lvl))
+        if log:
+            logger.info(msg)
 
     @staticmethod
-    def under(text, lvl=0):
+    def underline(msg, lvl=0, log=True):
         """Print unterlined text with indentation based on level."""
-        PrintUtils.print(TerminalColors.UNDERLINE.value + text + TerminalColors.RESET.value, lvl)
+        msg = TerminalColors.UNDERLINE.value + msg + TerminalColors.RESET.value
+        print(PrintUtils.indent(msg, lvl))
+        if log:
+            logger.info(msg)
 
     @staticmethod
-    def red(text, lvl=0):
+    def info(msg, lvl=0, log=True, end="\n"):
+        """Print normal text with indentation based on level."""
+        print(PrintUtils.indent(msg, lvl), end=end)
+        if log:
+            logger.info(PrintUtils.indent(msg, lvl))
+
+    @staticmethod
+    def error(msg, lvl=0):
         """Print red text with indentation based on level."""
-        PrintUtils.print(TerminalColors.RED.value + text + TerminalColors.RESET.value, lvl)
+        msg = TerminalColors.RED.value + msg + TerminalColors.RESET.value
+        print(PrintUtils.indent(msg, lvl))
+        logger.error(msg)
 
     @staticmethod
-    def green(text, lvl=0):
+    def success(msg, lvl=0):
         """Print green text with indentation based on level."""
-        PrintUtils.print(TerminalColors.GREEN.value + text + TerminalColors.RESET.value, lvl)
+        msg = TerminalColors.GREEN.value + msg + TerminalColors.RESET.value
+        print(PrintUtils.indent(msg, lvl))
+        logger.info(msg)
 
     @staticmethod
-    def orange(text, lvl=0):
+    def warning(msg, lvl=0):
         """Print orange text with indentation based on level."""
-        PrintUtils.print(TerminalColors.ORANGE.value + text + TerminalColors.RESET.value, lvl)
+        msg = TerminalColors.ORANGE.value + msg + TerminalColors.RESET.value
+        print(PrintUtils.indent(msg, lvl))
+        logger.warning(msg)
+
+    @staticmethod
+    def log(msg, lvl=0):
+        """Log info message with indentation based on level."""
+        msg = PrintUtils.indent(msg, lvl)
+        logger.info(msg)
 
 
 class DotDict(dict):

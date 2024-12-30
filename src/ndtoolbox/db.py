@@ -4,9 +4,9 @@ Navidrome database classes.
 
 import sqlite3
 
-from ndtools.model import Album, Annotation, Artist, MediaFile
-from ndtools.utils import DateUtil as DU
-from ndtools.utils import PrintUtils as PU
+from ndtoolbox.model import Album, Annotation, Artist, MediaFile
+from ndtoolbox.utils import DateUtil as DU
+from ndtoolbox.utils import PrintUtils as PU
 
 
 class NavidromeDbConnection(object):
@@ -28,7 +28,6 @@ class NavidromeDbConnection(object):
             Connection: Connection to the database.
         """
         self.conn = sqlite3.connect(self.db_path)
-        # print("Connected to database at:", self.db_path)
         if self.debug:
             self.conn.set_trace_callback(print)
         return self.conn
@@ -84,7 +83,7 @@ class NavidromeDb:
             cur.execute("SELECT id, user_name FROM user")
             users = cur.fetchall()
             if len(users) == 1:
-                PU.green(f"Using Navidrome account '{users[0][1]}'.\n")
+                PU.info(f"Using Navidrome account '{users[0][1]}'.")
             else:
                 raise Exception(
                     """
