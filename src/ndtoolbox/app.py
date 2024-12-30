@@ -57,6 +57,7 @@ class DuplicateProcessor:
         navidrome_db_path = config_folder + "/navidrome/navidrome.db"
         PU.bold("Initializing DuplicateProcessor")
         PU.ln()
+        PU.info(f"Config folder: {config_folder}")
         PU.info(f"Navidrome database path: {navidrome_db_path}")
         PU.info(f"Output folder: {output_folder}")
         PU.info(f"Source base: {source_base}")
@@ -304,7 +305,7 @@ class DuplicateProcessor:
             if dups[0].artist:
                 title = f"{dups[0].artist.name} - {title}"
 
-            PU.info(f"Merging {len(dups)} duplicates of '{title}'", 0, False, end="")
+            PU.info(f"Merging {len(dups)} duplicates of '{title}' ", 0, False, end="")
             PU.log(f"Merging {key} : {title} with {len(dups)} duplicates...")
             if len(dups) < 2:
                 PU.warning("> No duplicates to be merged. Skipping.", 1)
