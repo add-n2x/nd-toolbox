@@ -2,8 +2,8 @@
 Utility classes and functions for the ndtools package.
 """
 
-from datetime import datetime
 import sys
+from datetime import datetime
 from enum import Enum
 
 
@@ -22,7 +22,10 @@ class DateUtil:
         """Parse a date string according to the specified format."""
         if not date_str:
             return None
-        return datetime.strptime(date_str, fmt)
+        try:
+            return datetime.strptime(date_str, fmt)
+        except ValueError:
+            return datetime.fromisoformat(date_str)
 
 
 class CLI:
@@ -78,14 +81,20 @@ class PrintUtils:
         print(" " * 6 * lvl + text)
 
     @staticmethod
-    def println(text, lvl=0):
-        """Print with new line an normal text with indentation based on level."""
-        print("\n" + " " * 6 * lvl + text)
+    def println(thick=False):
+        """Print a ASCII line with optional length."""
+        c = "─" if not thick else "━"
+        print(c * 120)
 
     @staticmethod
     def bold(text, lvl=0):
         """Print bold text with indentation based on level."""
-        print(TerminalColors.BOLD.value + text + TerminalColors.RESET.value, lvl)
+        PrintUtils.print(TerminalColors.BOLD.value + text + TerminalColors.RESET.value, lvl)
+
+    @staticmethod
+    def under(text, lvl=0):
+        """Print unterlined text with indentation based on level."""
+        PrintUtils.print(TerminalColors.UNDERLINE.value + text + TerminalColors.RESET.value, lvl)
 
     @staticmethod
     def red(text, lvl=0):
