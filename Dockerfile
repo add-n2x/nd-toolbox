@@ -13,12 +13,11 @@ LABEL maintainer="David Trattnig <david@subsquare.at>"
 # Timezone
 ENV TZ=Vienna/Europe
 
-# MUSIC LIBRARY PATH SUBSTITUION
+# MUSIC LIBRARY PATH SUBSTITUTION
 # Base path of the music library in the Navidrome database.
 # If you run Navidrom with Docker, it's the path inside the container.
 ENV ND_BASE_PATH=/music/library
-# Base path of the music library within the nd-toolbox container.
-ENV BEETS_BASE_PATH=/app/music
+
 
 VOLUME /app/config/beets
 VOLUME /app/data
