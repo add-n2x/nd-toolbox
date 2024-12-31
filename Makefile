@@ -43,8 +43,9 @@ beet.import::
 beet.duplicatez::
 	beet duplicatez
 beet.reset::
-	rm config/beets/library.db
-	rm config/beets/state.pickle
+	rm -f $(DATA_DIR)/beets/library.db
+	rm -f $(DATA_DIR)/beets/state.pickle
+	rm -f $(DATA_DIR)/beets/beets-duplicates.json
 nd.backup:: BACKUP_FILE = $(DATA_DIR)/backup/$(shell date +'%Y-%m-%d_%H-%M-%S')-navidrome.db
 nd.backup::
 	mkdir -p $(DATA_DIR)/backup
@@ -52,7 +53,7 @@ nd.backup::
 	@echo "Backed up Navidrome database to $(BACKUP_FILE)"
 nd.merge-annotations::
 nd.merge-annotations::
-	rm data/error.json
+	rm -f data/error.json
 	poetry run python src/ndtoolbox/app.py action=merge-annotations
 nd.eval-deletable::
 	poetry run python src/ndtoolbox/app.py action=eval-deletable
@@ -88,8 +89,8 @@ docker.build::
 		.
 docker.run::
 	docker run --rm -it  \
-		-v $(ND_DIR):/app/config/navidrome  \
-		-v $(MUSIC_DIR):/app/music  \
-		-v $(DATA_DIR):/app/data  \
+		-v ./config/navidrome:/navidrome  \
+		-v ./music:/music  \
+		-v ./data:/data  \
 		-e TZ=${TIMEZONE} \
 		--entrypoint bash nd-toolbox
