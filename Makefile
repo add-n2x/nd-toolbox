@@ -69,6 +69,10 @@ dev.ruff::
 	poetry run ruff check .
 dev.test::
 	poetry run pytest -s
+dev.create-test-db::
+	sqlite3 config/navidrome/navidrome.db '.schema' > tmp/schema.sql
+	sqlite3 test/data/navidrome.db < tmp/schema.sql
+	@echo Now connect to db and run 'INSERT INTO user VALUES('b67d5135-cf67-4544-8013-d0f7c2d8a65a','test','Test User','','xx+aaaa/bb/ccccc+dddd/eee==',1,'2024-12-12 12:12:12.12+00:00',NULL,'2024-12-12 12:12:12.12+00:00','2020-20-20T10:20:20.20');'
 
 ### Docker Targets ###
 
