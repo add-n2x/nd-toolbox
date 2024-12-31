@@ -51,7 +51,7 @@ nd.backup::
 	mkdir -p $(DATA_DIR)/backup
 	cp $(ND_DIR)/navidrome.db $(BACKUP_FILE)
 	@echo "Backed up Navidrome database to $(BACKUP_FILE)"
-nd.merge-annotations::
+nd.merge-annotations:: nd.backup
 nd.merge-annotations::
 	rm -f data/error.json
 	poetry run python src/ndtoolbox/app.py action=merge-annotations
