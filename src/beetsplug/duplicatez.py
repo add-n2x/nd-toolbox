@@ -32,7 +32,7 @@ class DuplicatezPlugin(DuplicatesPlugin):
         self._dupz = {}
         self._count_tracks = 0
         self._count_dups = 0
-        self._file = "./output/beets-duplicates.json"
+        self._file = "./data/beets/beets-duplicates.json"
 
         # Purposely reuse 'duplicates' config
         self.config = beets.config["duplicates"]
