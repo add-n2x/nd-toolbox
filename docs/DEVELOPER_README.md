@@ -10,7 +10,7 @@ This document provides guidance for developers who want to contribute to or unde
 Create an `.env` file based on the sample:
 
 ```bash
-cp -n .env.sample .env
+cp -n .env.dev .env
 ```
 
 Then install the dependencies and create the default configuration using:
