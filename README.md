@@ -14,7 +14,7 @@ And other little helpers for Navidrome Music Server.
 Create an `.env` file based on the sample:
 
 ```bash
-cp -n sample.env .env
+cp -n .env.sample .env
 ```
 
 Then install the dependencies and create the default configuration using:
