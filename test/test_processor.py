@@ -5,8 +5,8 @@ import pytest
 from ndtoolbox.app import DuplicateProcessor
 from ndtoolbox.model import Annotation, MediaFile
 
-ND_DIR = "config/navidrome"
-DATA_DIR = "./data"
+ND_DIR = "test/data"
+DATA_DIR = "test/data"
 BEETS_BASE_PATH = "/app/music"
 ND_BASE_PATH = "/music/library"
 

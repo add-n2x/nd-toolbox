@@ -8,8 +8,8 @@ from ndtoolbox.db import Annotation, NavidromeDb
 from ndtoolbox.model import MediaFile
 
 # Example data to use for testing
-TEST_DB_PATH = "config/navidrome/navidrome.db"
-TEST_USER_ID = "b65d5135-ca67-4534-8014-d0f7c2d8e65a"
+TEST_DB_PATH = "test/data/navidrome.db"
+TEST_USER_ID = "b67d5135-cf67-4544-8013-d0f7c2d8a65a"
 
 test_media_file = MediaFile(
     id="111",
