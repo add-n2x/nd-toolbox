@@ -56,20 +56,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-  push-readme:
-    runs-on: ubuntu-latest
-    name: Push README to Docker Hub
-    steps:
-      - name: git checkout
-        uses: actions/checkout@v3
-      - name: push README to Dockerhub
-        uses: christian-korneck/update-container-description-action@v1
-        env:
-          DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Update image description
+        uses: peter-evans/dockerhub-description@e98e4d1628a5f3be2be7c231e50981aee98723ae # v4.0.0
         with:
-          destination_container_repo: ${{ env.IMAGE_NAME }}
-          provider: dockerhub
-          short_description: 'Navidrome Toolbox - Remove duplicates while keeping play counts and ratings. And other tools.'
-          readme_file: 'README.md'
-
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.IMAGE_NAME }}
