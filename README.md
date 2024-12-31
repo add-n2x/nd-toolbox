@@ -44,10 +44,20 @@ For all command first log into the container with:
 	docker exec -it nd-toolbox bash
 ```
 
-### Import music library
+### Import music into internal library
+
+Import music into your internal Beets library. This is required for further processing.
 
 ```bash
 make beet.import
+```
+
+### Reset internal library
+
+To reset your internal Beets library, removing all imported music:
+
+```bash
+make beet.reset
 ```
 
 ### Get duplicates
