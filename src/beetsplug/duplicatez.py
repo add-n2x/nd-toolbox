@@ -8,6 +8,7 @@ This can be useful for further analysis or integration with other systems.
 """
 
 import json
+import os
 
 import beets
 from beets.library import Item
@@ -32,7 +33,10 @@ class DuplicatezPlugin(DuplicatesPlugin):
         self._dupz = {}
         self._count_tracks = 0
         self._count_dups = 0
-        self._file = "./data/beets/beets-duplicates.json"
+        data_dir = "./data"
+        if os.getenv("DATA_DIR"):
+            data_dir = os.getenv("DATA_DIR")
+        self._file = data_dir + "/beets/beets-duplicates.json"
 
         # Purposely reuse 'duplicates' config
         self.config = beets.config["duplicates"]

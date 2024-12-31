@@ -12,24 +12,34 @@ LABEL maintainer="David Trattnig <david@subsquare.at>"
 
 # Timezone
 ENV TZ=Vienna/Europe
-
-# MUSIC LIBRARY PATH SUBSTITUTION
+# Local directory where the music files are stored. 
+# This is used by Beets and Navidrome.
+ENV MUSIC_DIR=/music
+# Folder to access logs and other processing data
+ENV DATA_DIR=/data
+# Beets configuration directory. 
+ENV BEETSDIR=/app/config/beets
+# Beets library base path. 
+ENV BEETS_BASE_PATH=/music
+# Point to the configuration dir for Navidrome. 
+# This directory should contain the navidrome.db 
+ENV ND_DIR=/navidrome
 # Base path of the music library in the Navidrome database.
 # If you run Navidrom with Docker, it's the path inside the container.
 ENV ND_BASE_PATH=/music/library
 
-
+# Volumes
 VOLUME /app/config/beets
 VOLUME /app/data
 
 
-# Configure poetry
+# Configure Poetry
 ENV POETRY_VERSION=1.8.5
 ENV POETRY_HOME=/opt/poetry
 ENV POETRY_VENV=/opt/poetry-venv
 ENV POETRY_CACHE_DIR=/opt/.cache
 
-# Setup poetry
+# Setup Poetry
 RUN python3 -m venv $POETRY_VENV \
     && $POETRY_VENV/bin/pip install -U pip setuptools \
     && $POETRY_VENV/bin/pip install poetry==${POETRY_VERSION}
@@ -43,16 +53,13 @@ RUN echo "Installing dependencies..." && \
     pip
 
 # Add local files
-RUN mkdir -p /app
+RUN mkdir -p /app /config /music /data \
+    && chown -R 1000:1000 /app /config /music /data
 COPY . /app/
-
-# Linux Server conventions
-RUN ln -s /app/config/navidrome /config
-RUN ln -s /app/music /music
-RUN ln -s /app/data /data
 
 # Init application
 WORKDIR /app
+RUN cp .env.docker .env
 RUN cp -n ./config/beets/sample-config.yaml ./config/beets/config.yaml
 RUN poetry config virtualenvs.create false
 RUN poetry install --no-interaction --no-ansi
