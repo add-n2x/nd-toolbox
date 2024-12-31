@@ -5,17 +5,12 @@
 export PYTHONPATH := src:$(PYTHONPATH)
 
 # Load env vars from .env file
-# include .env
+include .env
 
 # Build vars
 VERSION := $(shell grep -m 1 version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)
 BUILD_DATE=$(shell date +%F)
 
-# Container vars
-ND_DIR = ./config/navidrome
-MUSIC_DIR = ./music
-DATA_DIR = ./data
-export
 
 .DEFAULT_GOAL := help
 help::
@@ -25,8 +20,9 @@ help::
 	@echo "- beet.import    		: import music to beets library"
 	@echo "- beet.duplicatez  		: list duplicates with beets and export JSON"
 	@echo "- beet.reset       		: delete beets music library"
+	@echo "- nd.backup			: backup the Navidrome database to 'data/backup'"
 	@echo "- nd.merge-annotations		: read annotations of all duplicates, merge and store them"
-	@echo "- nd.eval-deletable	: evaluate deletable duplicates"
+	@echo "- nd.eval-deletable		: evaluate deletable duplicates"
 	@echo
 	@echo "- dev.init			: init app"	
 	@echo "- dev.shell			: start app shell"
@@ -43,13 +39,20 @@ help::
 ### App targets ###
 
 beet.import::
-	beet import -A $(MUSIC_DIR)
+	beet import -A $(MUSIC_DIR) -p 
 beet.duplicatez::
 	beet duplicatez
 beet.reset::
 	rm config/beets/library.db
 	rm config/beets/state.pickle
+nd.backup:: BACKUP_FILE = $(DATA_DIR)/backup/$(shell date +'%Y-%m-%d_%H-%M-%S')-navidrome.db
+nd.backup::
+	mkdir -p $(DATA_DIR)/backup
+	cp $(ND_DIR)/navidrome.db $(BACKUP_FILE)
+	@echo "Backed up Navidrome database to $(BACKUP_FILE)"
 nd.merge-annotations::
+nd.merge-annotations::
+	rm data/error.json
 	poetry run python src/ndtoolbox/app.py action=merge-annotations
 nd.eval-deletable::
 	poetry run python src/ndtoolbox/app.py action=eval-deletable
