@@ -17,13 +17,13 @@ And other little helpers for Navidrome Music Server.
 Use following command to start the Docker container:
 
 ```bash
-	docker run --rm -it \
-		-v $(ND_DIR):/navidrome \
-		-v $(MUSIC_DIR):/music \
-		-v $(DATA_DIR):/data \
-		-e TZ=${TIMEZONE} \
-        -e ND_BASE_PATH=${ND_BASE_PATH} \
-		--entrypoint bash nd-toolbox
+docker run --rm -it \
+    -v $(ND_DIR):/navidrome \
+    -v $(MUSIC_DIR):/music \
+    -v $(DATA_DIR):/data \
+    -e TZ=${TIMEZONE} \
+    -e ND_BASE_PATH=${ND_BASE_PATH} \
+    --entrypoint bash nd-toolbox
 ```
 
 Bind-mounts:
@@ -41,7 +41,7 @@ Environment vars:
 For all command first log into the container with:
 
 ```bash
-	docker exec -it nd-toolbox bash
+docker exec -it nd-toolbox bash
 ```
 
 ### Import music into internal library
