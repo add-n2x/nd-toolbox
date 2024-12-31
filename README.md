@@ -1,6 +1,7 @@
 # Navidrome Toolbox
 
-Remove duplicates from your [Navidrome](https://www.navidrome.org/) music library, while keeping play stats. 
+Remove duplicates from your [Navidrome](https://www.navidrome.org/) music library, while keeping play counts 
+and ratings. 
 
 And other little helpers for Navidrome Music Server.
 
@@ -9,45 +10,32 @@ And other little helpers for Navidrome Music Server.
 ## Prerequisites
 
 - Navidrome Music Server 0.53.0 or later
-- [Poetry](https://python-poetry.org/)
+- Docker
 
-Create an `.env` file based on the sample:
-
-```bash
-cp -n .env.sample .env
-```
-
-Then install the dependencies and create the default configuration using:
-
-```bash
-make init
-```
-
-## Usage
-
-Enter the Poetry virtual environment with
-
-```bash
-make shell
-```
-
-**Important**: While you could call the `beet` command directly, ensure you always use the wrapped
-`make beet` version. This also sets the Beets working directory (`BEETSDIR`) to `config/beets/` and
-ensures using the prepared Beets configuration file.
-
-Using this configuration, all operations are done in a non-destructive way, meaning no write
-operations are done on your music files and no files are copied.
-
-Nonetheless we cannot guarantee any malfunctions due to bugs and misconfiguration. Therefore always
-make copies of your files and libraries and do test runs wherever possible.
-
-### Prepare music library
+## Start Docker container
 
 Your music library is expected in the Docker container under `/music`. To mount your local music
 library into that Docker directory set edit `.env` and set the location for `MUSIC_LIBRARY_BASE`.
 
-You can copy you existing Beets library files to `config/beets/library.db`, or create a new library
-in said location with:
+
+```bash
+	docker run --rm -it  \
+		-v $(ND_DIR):/app/config/navidrome  \
+		-v $(MUSIC_DIR):/app/music  \
+		-v $(DATA_DIR):/app/data  \
+		-e TZ=${TIMEZONE} \
+		--entrypoint bash nd-toolbox
+```
+
+## Usage
+
+For all command first log into the container with:
+
+```bash
+	docker exec -it nd-toolbox bash
+```
+
+### Import music library
 
 ```bash
 make beet.import
@@ -55,16 +43,27 @@ make beet.import
 
 ### Get duplicates
 
+Get a list of duplicates according to the default behaviour, matching MusicBrainz Track ID (`mb_trackid`)
+and Album ID (`mb_albumid`).
+
 ```bash
 make beet.duplicates
 ```
 
-This lists all duplicates according to default behaviour, matching MusicBrainz Track ID (`mb_trackid`)and Album ID (`mb_albumid`).
+### Merge and update annotations
 
-### Get list of worse duplicates
+Merge annotations such as play count and rating within duplicates and store the result in the Navidrome database.
 
-```py
-python query_navidrome.py /path/to/navidrome.db /path/to/music/file.mp3
+```bash
+make nd.merge-annotations
+```
+
+### Evaluate deletable duplicates
+
+Evaluate which duplicates have the best criteria for keeping and can be kept while deleting others.
+
+```bash
+make nd.eval-deletable
 ```
 
 ## Acknowledgments
