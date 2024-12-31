@@ -29,7 +29,7 @@ jobs:
       - name: Build the Docker image
         run: make docker.build
       - name: Test the Docker image
-        run: docker run --rm -t --entrypoint bash nd-toolbox
+        run: docker run --rm -t --entrypoint make nd-toolbox dev.test
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
