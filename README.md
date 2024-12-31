@@ -14,9 +14,7 @@ And other little helpers for Navidrome Music Server.
 
 ## Start Docker container
 
-Your music library is expected in the Docker container under `/music`. To mount your local music
-library into that Docker directory set edit `.env` and set the location for `MUSIC_LIBRARY_BASE`.
-
+Use following command to start the Docker container:
 
 ```bash
 	docker run --rm -it  \
@@ -24,8 +22,19 @@ library into that Docker directory set edit `.env` and set the location for `MUS
 		-v $(MUSIC_DIR):/app/music  \
 		-v $(DATA_DIR):/app/data  \
 		-e TZ=${TIMEZONE} \
+        -e ND_BASE_PATH=${ND_BASE_PATH} \
 		--entrypoint bash nd-toolbox
 ```
+
+Bind-mounts:
+    - `MUSIC_DIR` (read-only): Point to the directory where your music files are located.
+    - `ND_DIR` (writeable): Point to the directory where your Navidrome database is located.
+    - `DATA_DIR` (writable): Point to a directory where temporary processing data and logs can be stored.
+      If not set a default volume is used.
+
+Environment vars:
+    - `TZ`: Set your timezone. If not set it defaults to `Europe/Vienna`.
+    - `ND_BASE_PATH`: Base path of the music library within your Navidrome container. Defaults to `/music/library`.
 
 ## Usage
 
