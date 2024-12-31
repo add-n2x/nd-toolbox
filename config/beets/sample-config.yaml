@@ -1,5 +1,5 @@
 directory: ../music
-library: ./library.db
+library: ../../data/beets/library.db
 import:
   copy: no
   move: no
