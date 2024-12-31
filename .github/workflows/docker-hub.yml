@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Test the Docker image
-        run: docker run --rm -it --entrypoint cat nd-toolbox
+        run: docker run --rm -t --entrypoint bash nd-toolbox
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
