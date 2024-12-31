@@ -5,15 +5,16 @@
 export PYTHONPATH := src:$(PYTHONPATH)
 
 # Load env vars from .env file
-include .env
+# include .env
 
 # Build vars
 VERSION := $(shell grep -m 1 version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)
 BUILD_DATE=$(shell date +%F)
 
 # Container vars
-BEETSDIR = ./config/beets
-BEETSMUSIC_DIR_SOURCE = ./music
+ND_DIR = ./config/navidrome
+MUSIC_DIR = ./music
+DATA_DIR = ./data
 export
 
 .DEFAULT_GOAL := help
@@ -42,7 +43,7 @@ help::
 ### App targets ###
 
 beet.import::
-	beet import -A $(BEETSMUSIC_DIR_SOURCE)
+	beet import -A $(MUSIC_DIR)
 beet.duplicatez::
 	beet duplicatez
 beet.reset::
@@ -79,7 +80,7 @@ docker.build::
 		.
 docker.run::
 	docker run --rm -it  \
-		-v $(CONFIG_DIR):/app/config  \
+		-v $(ND_DIR):/app/config/navidrome  \
 		-v $(MUSIC_DIR):/app/music  \
 		-v $(DATA_DIR):/app/data  \
 		-e TZ=${TIMEZONE} \

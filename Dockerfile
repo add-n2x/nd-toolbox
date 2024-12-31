@@ -6,6 +6,28 @@ ARG VERSION
 LABEL build_version="Navidrome Toolbox version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 LABEL maintainer="David Trattnig <david@subsquare.at>"
 
+#
+# APP CONFIGURATION
+#
+
+# Timezone
+ENV TZ=Vienna/Europe
+
+# MUSIC LIBRARY PATH SUBSTITUION
+# Base path of the music library in the Navidrome database.
+# If you run Navidrom with Docker, it's the path inside the container.
+ENV ND_BASE_PATH=/music/library
+# Base path of the music library within the nd-toolbox container.
+ENV BEETS_BASE_PATH=/app/music
+
+# Mount read-only to the folder where the file "navidrome.db" is located.
+VOLUME /app/config/navidrome
+# Mount to the folder where your music is located.
+VOLUME /app/music
+# Mount to a folder where you want to access logs and other processing data
+VOLUME /app/data
+
+
 # Configure poetry
 ENV POETRY_VERSION=1.8.5
 ENV POETRY_HOME=/opt/poetry
@@ -30,7 +52,7 @@ RUN mkdir -p /app
 COPY . /app/
 
 # Linux Server conventions
-RUN ln -s /app/config /config
+RUN ln -s /app/config/navidrome /config
 RUN ln -s /app/music /music
 RUN ln -s /app/data /data
 

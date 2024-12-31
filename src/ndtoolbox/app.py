@@ -23,10 +23,10 @@ class DuplicateProcessor:
     This class processes duplicate media files.
 
     Attributes:
-        db (NavidromeDb): The database connection to interact with the Navidrome database.
         dups_input (dict): A dictionary containing the raw duplicate media files references from Beets.
         media_files (dict): A dictionary containing the enhanced duplicate media files with data from Navidrome.
         stats (DotDict): A dictionary containing statistics about the processing of duplicate media files.
+        nd_folder (str): The path to the Navidrome database folder.
         data_folder (str): The path to the data folder where processed files will be saved.
     """
 
@@ -35,14 +35,14 @@ class DuplicateProcessor:
     dups_media_files: dict
     stats: DotDict
     errors: list
-    config_folder: str
+    nd_folder: str
     data_folder: str
     source_base: str
     target_base: str
     start: float
     stop: float
 
-    def __init__(self, config_folder: str, data_folder: str, source_base: str, target_base: str):
+    def __init__(self, nd_folder: str, data_folder: str, source_base: str, target_base: str):
         """
         Initialize the DuplicateProcessor with a database and an input file containing duplicate media files.
 
@@ -54,16 +54,15 @@ class DuplicateProcessor:
             source_base (str): Paths in the JSON file are relative to this path.
             target_base (str): The actual location in the Navidrome music library.
         """
-        navidrome_db_path = config_folder + "/navidrome/navidrome.db"
+        navidrome_db_path = nd_folder + "/navidrome.db"
         PU.bold("Initializing DuplicateProcessor")
         PU.ln()
-        PU.info(f"Config folder: {config_folder}")
         PU.info(f"Navidrome database path: {navidrome_db_path}")
         PU.info(f"Output folder: {data_folder}")
         PU.info(f"Source base: {source_base}")
         PU.info(f"Target base: {target_base}")
         self.db = NavidromeDb(navidrome_db_path)
-        self.config_folder = config_folder
+        self.nd_folder = nd_folder
         self.data_folder = data_folder
         self.source_base = source_base
         self.target_base = target_base
@@ -449,24 +448,24 @@ if __name__ == "__main__":
 
     load_dotenv(find_dotenv())
 
-    config_dir = None
+    nd_dir = None
     data_dir = None
     music_dir = None
     source_base = None
     target_base = None
 
-    if os.getenv("CONFIG_DIR"):
-        config_dir = os.getenv("CONFIG_DIR")
+    if os.getenv("ND_DIR"):
+        nd_dir = os.getenv("ND_DIR")
     if os.getenv("DATA_DIR"):
         data_dir = os.getenv("DATA_DIR")
     if os.getenv("MUSIC_DIR"):
         music_dir = os.getenv("MUSIC_DIR")
     if os.getenv("BEETS_BASE_PATH"):
         source_base = os.getenv("BEETS_BASE_PATH")
-    if os.getenv("NAVIDROME_BASE_PATH"):
-        target_base = os.getenv("NAVIDROME_BASE_PATH")
+    if os.getenv("ND_BASE_PATH"):
+        target_base = os.getenv("ND_BASE_PATH")
 
-    processor = DuplicateProcessor(config_dir, data_dir, source_base, target_base)
+    processor = DuplicateProcessor(nd_dir, data_dir, source_base, target_base)
 
     if action == "merge-annotations":
         processor.merge_and_store_annotations()
