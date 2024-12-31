@@ -20,11 +20,7 @@ ENV ND_BASE_PATH=/music/library
 # Base path of the music library within the nd-toolbox container.
 ENV BEETS_BASE_PATH=/app/music
 
-# Mount read-only to the folder where the file "navidrome.db" is located.
-VOLUME /app/config/navidrome
-# Mount to the folder where your music is located.
-VOLUME /app/music
-# Mount to a folder where you want to access logs and other processing data
+VOLUME /app/config/beets
 VOLUME /app/data
 
 
