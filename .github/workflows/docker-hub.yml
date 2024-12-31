@@ -14,18 +14,20 @@ env:
   IMAGE_NAME: d4vid2/nd-toolbox
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build the Docker image
-      run: make docker.build
-      id: build
+#   build:
+#     runs-on: ubuntu-latest
+#     steps:
+#     - uses: actions/checkout@v3
+#     - name: Build the Docker image
+#       run: make docker.build
+#       id: build
   test:
     runs-on: ubuntu-latest
-    needs: build
+    # needs: build
     steps:
-    #   - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - name: Build the Docker image
+        run: make docker.build
       - name: Test the Docker image
         run: docker run --rm -t --entrypoint bash nd-toolbox
   push_to_registry:
