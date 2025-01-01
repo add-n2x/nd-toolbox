@@ -73,6 +73,9 @@ make beet.duplicates
 
 Merge annotations such as play count and rating within duplicates and store the result in the Navidrome database.
 
+The command backups the navidrome database before merging annotations. To be safe always create an additional 
+backup of your database manually.
+
 ```bash
 make nd.merge-annotations
 ```
@@ -89,7 +92,7 @@ make nd.eval-deletable
 
 This library is based on the important groundwork provided by the
 [iTunes Navidrome Migration](https://github.com/Stampede/itunes-navidrome-migration) scripts.
-This is what finally made my move to Navidrome possible. Thank you, @Stampede!
+This is what finally made my move to Navidrome possible.
 
-Kudos to the Navidrome developers for building a music server that is here to stay.
+Also, kudos to the Navidrome developers for building a music server that is here to stay.
 
