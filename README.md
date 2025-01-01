@@ -5,7 +5,8 @@ and ratings.
 
 And other little helpers for Navidrome Music Server.
 
-<mark>**WIP**: This repository is work in progress. Features and documentation are not yet completed!</mark>
+> [!IMPORTANT]
+> This repository is work in progress. Features and documentation are not yet completed.
 
 ## Prerequisites
 
