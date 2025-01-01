@@ -27,15 +27,24 @@ docker run --rm -it \
     --entrypoint bash nd-toolbox
 ```
 
-Bind-mounts:
-    - `MUSIC_DIR` (read-only): Point to the directory where your music files are located.
-    - `ND_DIR` (writeable): Point to the directory where your Navidrome database is located.
-    - `DATA_DIR` (writable): Point to a directory where temporary processing data and logs can be stored.
-      If not set a default volume is used.
+### Volumes
 
-Environment vars:
-    - `TZ`: Set your timezone. If not set it defaults to `Europe/Vienna`.
-    - `ND_BASE_PATH`: Base path of the music library within your Navidrome container. Defaults to `/music/library`.
+Bind-mount the following local directories into the container:
+
+| Parameter  | Description                                                                     |
+|------------|---------------------------------------------------------------------------------|
+| `MUSIC_DIR` | Run the container in background. If not set, the container runs in foreground. |
+| `DATA_DIR`  | A directory where temporary processing data and logs can be stored.            |
+| `ND_DIR`    | The directory where your Navidrome database is located.                        |
+
+### Environment Variables
+
+Optionally set these environment variables:
+
+| Parameter       | Description                                                                                   |
+|-----------------|-----------------------------------------------------------------------------------------------|
+| `TZ`            | Set your timezone. If not set it defaults to `Europe/Vienna`.                                 |
+| `ND_BASE_PATH`  | Base path of the music library within your Navidrome container. Defaults to `/music/library`. |
 
 ## Usage
 
