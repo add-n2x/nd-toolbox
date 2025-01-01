@@ -1,0 +1,20 @@
+directory: ../music
+library: /data/beets/library.db
+import:
+  copy: no
+  move: no
+  write: no
+  autotag: no
+pluginpath:
+    - src/beetsplug
+plugins: duplicates duplicatez
+duplicates:
+  format: $mb_trackid - $mb_albumid | $path
+  keys: [mb_trackid, mb_albumid]
+  full: yes
+  strict: yes
+  album: no
+  count: no
+  delete: no
+  path: no
+  group: no

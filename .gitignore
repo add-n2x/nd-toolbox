@@ -1,6 +1,7 @@
 /tmp
 /config/beets/**/*
-!/config/beets/sample-config.yaml
+!/config/beets/dev.config.yaml
+!/config/beets/docker.config.yaml
 /config/navidrome/**
 !/config/navidrome/.gitkeep
 /music

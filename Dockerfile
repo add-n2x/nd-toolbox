@@ -60,7 +60,7 @@ COPY . /app/
 # Init application
 WORKDIR /app
 RUN cp .env.docker .env
-RUN cp -n ./config/beets/sample-config.yaml ./config/beets/config.yaml
+RUN cp -n ./config/beets/docker.config.yaml ./config/beets/config.yaml
 RUN poetry config virtualenvs.create false
 RUN poetry install --no-interaction --no-ansi
 ENTRYPOINT ["/bin/bash"]

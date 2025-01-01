@@ -63,7 +63,7 @@ version::
 ### Development targets ###
 
 dev.init::
-	$(shell cp -n config/beets/sample-config.yaml config/beets/config.yaml)
+	$(shell cp -n config/beets/dev.config.yaml config/beets/config.yaml)
 	poetry install
 dev.shell::
 	poetry shell
