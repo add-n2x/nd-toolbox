@@ -142,7 +142,7 @@ class NavidromeDb:
             file_path (str): The path of the media file to retrieve.
         """
         query = """
-            SELECT id, title, year, track_number, duration, bit_rate, artist_id, album_id, mbz_recording_id
+            SELECT id, title, year, track_number, duration, bit_rate, artist_id, artist, album_id, album, mbz_recording_id
             FROM media_file
             WHERE path LIKE ?
         """
@@ -164,6 +164,8 @@ class NavidromeDb:
                 result[6],
                 result[7],
                 result[8],
+                result[9],
+                result[10],
             )
 
     def get_artist(self, media_file: MediaFile, artist_id: str) -> Artist:

@@ -117,9 +117,11 @@ class MediaFile:
        bitrate (int): The bitrate of the media file in kbps.
        annotation (Annotation): The annotation of the media file.
        artist_id (str): The foreign key referencing the artist of the media file.
+       artist_name (str): The name of the artist of the media file (optional).
        artist (Artist): The artist of the media file.
        album_id (str): The foreign key referencing the album of the media file.
-       album (Album): The album of the media file.
+       album_name (str): The name of the album of the media file.
+       album (Album): The album of the media file (optional).
        mbz_recording_id (str): The MusicBrainz recording ID of the media file.
        has_keepable (bool): Indicates whether some of its media files is keepable.
     """
@@ -133,8 +135,10 @@ class MediaFile:
     bitrate: int  # in kbps
     annotation: Optional[Annotation]
     artist_id: Optional[str]  # foreign key
+    arist_name: str
     artist: Artist
     album_id: Optional[str]  # foreign key
+    album_name: str
     album: Album
     mbz_recording_id: str
     has_keepable: bool
@@ -149,7 +153,9 @@ class MediaFile:
         duration: int,
         bitrate: int,
         artist_id: str,
+        artist_name: str,
         album_id: str,
+        album_name: str,
         mbz_recording_id: str,
     ):
         """Init instance."""
@@ -161,15 +167,18 @@ class MediaFile:
         self.duration = duration
         self.bitrate = int(bitrate)
         self.artist_id = artist_id
+        self.artist_name = artist_name
         self.artist = None
         self.album_id = album_id
+        self.album_name = album_name
         self.album = None
         self.mbz_recording_id = mbz_recording_id
         self.annotation = None
         self.has_keepable = False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Instance representation."""
         return f"MediaFile(id={self.id}, path={self.path}, title={self.title}, year={self.year}, \
             track_number={self.track_number}, duration={self.duration}, bitrate={self.bitrate}, \
-            artist_id={self.artist_id}, album_id={self.album_id}, mbz_recording_id={self.mbz_recording_id})"
+            artist_id={self.artist_id}, artist_name={self.artist_name} album_id={self.album_id}, \
+            album_name={self.album_name}, mbz_recording_id={self.mbz_recording_id})"
