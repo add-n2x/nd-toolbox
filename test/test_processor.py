@@ -3,7 +3,8 @@
 import pytest
 
 from ndtoolbox.app import DuplicateProcessor
-from ndtoolbox.model import Annotation, MediaFile
+from ndtoolbox.model import Album, Annotation, MediaFile
+from ndtoolbox.utils import ToolboxConfig
 
 ND_DIR = "test/data"
 DATA_DIR = "test/data"
@@ -14,11 +15,12 @@ ND_BASE_PATH = "/music/library"
 @pytest.fixture(scope="session")
 def processor():
     """Fixture to create a DuplicateProcessor instance."""
+    ToolboxConfig()
     processor = DuplicateProcessor(ND_DIR, DATA_DIR, BEETS_BASE_PATH, ND_BASE_PATH)
     yield processor
 
 
-def test_merge_annotation_data(processor):
+def test_merge_annotation_data(processor: DuplicateProcessor):
     """Test merging annotation data from two MediaFile objects."""
     # Create two MediaFile objects with some annotation data
     a = MediaFile(
@@ -29,8 +31,10 @@ def test_merge_annotation_data(processor):
         track_number=3,
         duration=3600,
         bitrate=320,
-        artist_id=0,
-        album_id=0,
+        artist_id=None,
+        artist_name=None,
+        album_id=None,
+        album_name=None,
         mbz_recording_id="recording-1",
     )
     a.annotation = Annotation(
@@ -51,8 +55,10 @@ def test_merge_annotation_data(processor):
         track_number=3,
         duration=3600,
         bitrate=320,
-        artist_id=0,
-        album_id=0,
+        artist_id=None,
+        artist_name=None,
+        album_id=None,
+        album_name=None,
         mbz_recording_id="recording-2",
     )
     b.annotation = Annotation(
@@ -74,7 +80,7 @@ def test_merge_annotation_data(processor):
     assert b.annotation.starred
 
 
-def test_merge_annotation_list(processor):
+def test_merge_annotation_list(processor: DuplicateProcessor):
     """Test the merge_annotation_list method."""
     # Create a list of four Media files with annotations
     files = [
@@ -86,8 +92,10 @@ def test_merge_annotation_list(processor):
             track_number=3,
             duration=3600,
             bitrate=320,
-            artist_id=0,
-            album_id=0,
+            artist_id=None,
+            artist_name=None,
+            album_id=None,
+            album_name=None,
             mbz_recording_id="recording-1",
         ),
         MediaFile(
@@ -98,8 +106,10 @@ def test_merge_annotation_list(processor):
             track_number=3,
             duration=3600,
             bitrate=320,
-            artist_id=0,
-            album_id=0,
+            artist_id=None,
+            artist_name=None,
+            album_id=None,
+            album_name=None,
             mbz_recording_id="recording-2",
         ),
         MediaFile(
@@ -110,8 +120,10 @@ def test_merge_annotation_list(processor):
             track_number=3,
             duration=3600,
             bitrate=320,
-            artist_id=0,
-            album_id=0,
+            artist_id=None,
+            artist_name=None,
+            album_id=None,
+            album_name=None,
             mbz_recording_id="recording-3",
         ),
         MediaFile(
@@ -122,8 +134,10 @@ def test_merge_annotation_list(processor):
             track_number=3,
             duration=3600,
             bitrate=320,
-            artist_id=0,
-            album_id=0,
+            artist_id=None,
+            artist_name=None,
+            album_id=None,
+            album_name=None,
             mbz_recording_id="recording-3",
         ),
     ]
@@ -146,3 +160,170 @@ def test_merge_annotation_list(processor):
     assert files[0].annotation.play_count == 9
     assert files[0].annotation.rating == 4
     assert files[0].annotation.starred
+
+
+def test_get_keepable_media(processor: DuplicateProcessor):
+    """
+    Test get keepable media logic.
+
+    1. Media file is in an album, which already contains another media file which is keepable.
+    2. Media file has a MusicBrainz recording ID.
+    3. Media file has an artist record available in the Navidrome database.
+    4. Media file contains a album track number.
+    5. Media file has a better bit rate than any of the other duplicate media files.
+    6. Media file holds a release year.
+    """
+    dups = [
+        MediaFile(
+            id="11",
+            path="/path/to/file1.mp3",
+            title="File 1",
+            year=None,
+            track_number=None,
+            duration=3600,
+            bitrate=64,
+            artist_id=0,
+            artist_name=None,
+            album_id=0,
+            album_name=None,
+            mbz_recording_id=None,
+        ),
+        MediaFile(
+            id="12",
+            path="/path/to/file2.mp3",
+            title="File 2",
+            year=1990,
+            track_number=None,
+            duration=3600,
+            bitrate=64,
+            artist_id=0,
+            artist_name=None,
+            album_id=0,
+            album_name=None,
+            mbz_recording_id=None,
+        ),
+        MediaFile(
+            id="13",
+            path="/path/to/file3.mp3",
+            title="File 3",
+            year=1990,
+            track_number=None,
+            duration=3600,
+            bitrate=128,
+            artist_id=0,
+            artist_name=None,
+            album_id=0,
+            album_name=None,
+            mbz_recording_id=None,
+        ),
+        MediaFile(
+            id="14",
+            path="/path/to/file4.mp3",
+            title="File 4",
+            year=1990,
+            track_number=3,
+            duration=3600,
+            bitrate=360,
+            artist_id=0,
+            artist_name=None,
+            album_id=0,
+            album_name=None,
+            mbz_recording_id=None,
+        ),
+        MediaFile(
+            id="15",
+            path="/path/to/file4.mp3",
+            title="File 5",
+            year=1990,
+            track_number=3,
+            duration=3600,
+            bitrate=360,
+            artist_id=0,
+            artist_name=None,
+            album_id=0,
+            album_name=None,
+            mbz_recording_id=None,
+        ),
+        MediaFile(
+            id="16",
+            path="/path/to/file4.mp3",
+            title="File 6",
+            year=1990,
+            track_number=3,
+            duration=3600,
+            bitrate=320,
+            artist_id=0,
+            artist_name=None,
+            album_id=0,
+            album_name=None,
+            mbz_recording_id="musicBrainzID",
+        ),
+        # That's a keeper:
+        MediaFile(
+            id="17",
+            path="/path/to/file4.mp3",
+            title="File 7",
+            year=1990,
+            track_number=3,
+            duration=3600,
+            bitrate=320,
+            artist_id=0,
+            artist_name=None,
+            album_id=0,
+            album_name=None,
+            mbz_recording_id="musicBrainzID",
+        ),
+    ]
+
+    dups2 = [
+        MediaFile(
+            # That's a keeper:
+            id="3000",
+            path="/path/to/file4.mp3",
+            title="The Song",
+            year=1990,
+            track_number=1,
+            duration=3600,
+            bitrate=1024,
+            artist_id=0,
+            artist_name=None,
+            album_id=0,
+            album_name=None,
+            mbz_recording_id="musicBrainzID",
+        ),
+        MediaFile(
+            id="2000",
+            path="/path/to/file4.mp3",
+            title="The Song (remastered)",
+            year=1990,
+            track_number=1,
+            duration=3600,
+            bitrate=1024,
+            artist_id=0,
+            artist_name=None,
+            album_id=0,
+            album_name=None,
+            mbz_recording_id=None,
+        ),
+    ]
+
+    album = Album(id="album-1", name="Album 1", artist_id="artist-1", song_count=13)
+    # for dup in dups[4:-1]:
+    dups[-1].album = album
+    dups2[0].album = album
+
+    # First, eval the 2nd list, to get the album marked with "has_keepable"
+    keeper = processor._get_keepable_media(dups2)
+    assert keeper.id == dups2[0].id
+    assert keeper.album is not None
+    assert keeper.album.has_keepable is True
+    assert keeper.title == "The Song"
+    assert keeper.bitrate == 1024
+
+    # Now, eval the first list
+    keeper = processor._get_keepable_media(dups)
+    assert keeper.id == dups[6].id
+    assert keeper.album is not None
+    assert keeper.album.has_keepable is True
+    assert keeper.title == "File 7"
+    assert keeper.bitrate == 320
