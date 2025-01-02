@@ -153,6 +153,15 @@ class DuplicateProcessor:
         """
         Recursively determine which file is keepable based on the criteria.
 
+        The logic to determine which file to keep is as follows, and in that order:
+
+        1. Media file is in an album, which already contains another media file which is keepable.
+        2. Media file has a MusicBrainz recording ID.
+        3. Media file has an artist record available in the Navidrome database.
+        4. Media file contains a album track number.
+        5. Media file has a better bit rate than any of the other duplicate media files.
+        6. Media file holds a release year.
+
         Args:
             dups (MediaFile): A list of duplicate media files to evaluate for a keepable.
 
@@ -179,6 +188,17 @@ class DuplicateProcessor:
             left = this.mbz_recording_id is not None
             right = that.mbz_recording_id is not None
             PU.log(f"Compare MusicBrainz recording ID: {left} || {right}", 1)
+            if left != right:
+                if left:
+                    return this
+                elif right:
+                    return that
+            # Skip, if they are the same
+
+            # Having artist record in Navidrome is keepable
+            left = this.artist is not None
+            right = that.artist is not None
+            PU.log(f"Artist record available: {left} || {right}", 1)
             if left != right:
                 if left:
                     return this
@@ -223,9 +243,11 @@ class DuplicateProcessor:
             self.errors.append({"warning": "No condition matched, keeping 'that'", "this": this, "that": that})
             return that
 
+        # Keepable if there is only one duplicate
         if len(dups) == 1:
-            # Keepable if there is only one duplicate
-            dups[0].album.keepable = True
+            # Mark related album as having a keepable duplicate
+            if dups[0].album is not None:
+                dups[0].album.has_keepable = True
             return dups[0]
         else:
             # Get the last item of the dups list:
@@ -242,7 +264,6 @@ class DuplicateProcessor:
                 child_dups.append(that)
                 removed = this
 
-            keepable.album.has_keepable = True
             removed.deletable = True
             self.stats.media_files_deletable += 1
             PU.log(f"\nDeletable: {removed}", 1)
