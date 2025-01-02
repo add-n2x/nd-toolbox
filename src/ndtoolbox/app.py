@@ -4,17 +4,15 @@ This module provides functionality to process duplicate media files.
 
 import datetime
 import json
-import os
 import sys
 import unicodedata
 
 import jsonpickle
 import tomli
-from dotenv import find_dotenv, load_dotenv
 
 from ndtoolbox.db import NavidromeDb
 from ndtoolbox.model import MediaFile
-from ndtoolbox.utils import CLI, DotDict
+from ndtoolbox.utils import CLI, DotDict, ToolboxConfig
 from ndtoolbox.utils import PrintUtils as PU
 
 
@@ -256,7 +254,7 @@ class DuplicateProcessor:
 
         This is required since the base paths of files may differ between the Beets and Navidrome library.
         """
-        if not self.source_base or not target_base:
+        if not self.source_base or not self.target_base:
             PU.warning("Skipping base path update, since no paths are set")
             return
         if self.source_base == self.target_base:
@@ -378,17 +376,17 @@ class DuplicateProcessor:
                     PU.log(f"└───── {media.artist.annotation}", 3)
             else:
                 self.errors.append({"error": "artist not found", "path": file_path, "media": media})
-                PU.error("└───── Artist not found in database!", 2)
+                PU.error(f"└───── Artist of '{media.path}' not found in database!", 2)
             if media.album:
                 PU.log(f"└───── {media.album}", 2)
                 if media.album.annotation:
                     PU.log(f"└───── {media.album.annotation}", 3)
             else:
                 # This is not seen as an error because not all media files have an album
-                PU.log("└───── Album not found in database!", 2)
+                PU.log(f"└───── Album of '{media.path}' not found in database!", 2)
         else:
             self.errors.append({"error": "media file not found", "path": file_path})
-            PU.error("└───── Media file not found in database!", 1)
+            PU.error(f"└───── Media file for '{file_path}' not found in database!", 1)
 
     def print_stats(self):
         """Print statistics about the processing."""
@@ -435,6 +433,7 @@ class DuplicateProcessor:
 
 
 if __name__ == "__main__":
+    config = ToolboxConfig()
     with open("pyproject.toml", mode="rb") as file:
         data = tomli.load(file)
         version = data["tool"]["poetry"]["version"]
@@ -446,26 +445,7 @@ if __name__ == "__main__":
     action = sys.argv[1] if len(sys.argv) > 1 else None
     action = action.split("action=")[1]
 
-    load_dotenv(find_dotenv())
-
-    nd_dir = None
-    data_dir = None
-    music_dir = None
-    source_base = None
-    target_base = None
-
-    if os.getenv("ND_DIR"):
-        nd_dir = os.getenv("ND_DIR")
-    if os.getenv("DATA_DIR"):
-        data_dir = os.getenv("DATA_DIR")
-    if os.getenv("MUSIC_DIR"):
-        music_dir = os.getenv("MUSIC_DIR")
-    if os.getenv("BEETS_BASE_PATH"):
-        source_base = os.getenv("BEETS_BASE_PATH")
-    if os.getenv("ND_BASE_PATH"):
-        target_base = os.getenv("ND_BASE_PATH")
-
-    processor = DuplicateProcessor(nd_dir, data_dir, source_base, target_base)
+    processor = DuplicateProcessor(config.nd_dir, config.data_dir, config.source_base, config.target_base)
 
     if action == "merge-annotations":
         processor.merge_and_store_annotations()

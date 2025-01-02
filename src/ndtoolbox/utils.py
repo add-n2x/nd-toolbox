@@ -3,22 +3,54 @@ Utility classes and functions for the ndtoolbox package.
 """
 
 import logging
+import os
 import sys
 from datetime import datetime
 from enum import Enum
 
 import colorlog
+from dotenv import find_dotenv, load_dotenv
 
-# Setup logger
-LOG_FILE = "./data/nd-toolbox.log"
-logger = colorlog.getLogger("ndtoolbox")
-colorlog.basicConfig(
-    filename=LOG_FILE,
-    filemode="w",
-    encoding="utf-8",
-    level=logging.INFO,
-    format="%(log_color)s %(msecs)d %(name)s %(levelname)s %(message)s",
-)
+
+class ToolboxConfig:
+    """
+    Configuration class for ND Toolbox.
+    """
+
+    timezone = None
+    logger = None
+
+    nd_dir = None
+    data_dir = None
+    music_dir = None
+    source_base = None
+    target_base = None
+
+    def __init__(self):
+        """Init config from environment variables."""
+        load_dotenv(find_dotenv())
+
+        ToolboxConfig.timezone = os.getenv("TZ", "UTC")
+        ToolboxConfig.nd_dir = os.getenv("ND_DIR")
+        ToolboxConfig.data_dir = os.getenv("DATA_DIR")
+        ToolboxConfig.music_dir = os.getenv("MUSIC_DIR")
+        ToolboxConfig.source_base = os.getenv("BEETS_BASE_PATH")
+        ToolboxConfig.target_base = os.getenv("ND_BASE_PATH")
+
+        # Setup logger
+        log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+        if log_level not in logging._nameToLevel:
+            raise ValueError(f"Invalid LOG_LEVEL: {log_level}")
+        log_file = ToolboxConfig.data_dir + "/nd-toolbox.log"
+        ToolboxConfig.logger = colorlog.getLogger("ndtoolbox")
+        colorlog.basicConfig(
+            filename=log_file,
+            filemode="w",
+            encoding="utf-8",
+            level=log_level,
+            format="%(log_color)s %(msecs)d %(name)s %(levelname)s %(message)s",
+        )
+        print(f"Initialized logger with level: {log_level} and log file: {log_file}")
 
 
 class DateUtil:
@@ -99,7 +131,7 @@ class PrintUtils:
         """Print a ASCII line with optional length."""
         c = "─" if not thick else "━"
         print(c * 80)
-        logger.info(c * 80)
+        ToolboxConfig.logger.info(c * 80)
 
     @staticmethod
     def bold(msg, lvl=0, log=True):
@@ -107,7 +139,7 @@ class PrintUtils:
         msg = TerminalColors.BOLD.value + msg + TerminalColors.RESET.value
         print(PrintUtils.indent(msg, lvl))
         if log:
-            logger.info(msg)
+            ToolboxConfig.logger.info(msg)
 
     @staticmethod
     def underline(msg, lvl=0, log=True):
@@ -115,41 +147,41 @@ class PrintUtils:
         msg = TerminalColors.UNDERLINE.value + msg + TerminalColors.RESET.value
         print(PrintUtils.indent(msg, lvl))
         if log:
-            logger.info(msg)
+            ToolboxConfig.logger.info(msg)
 
     @staticmethod
     def info(msg, lvl=0, log=True, end="\n"):
         """Print normal text with indentation based on level."""
         print(PrintUtils.indent(msg, lvl), end=end)
         if log:
-            logger.info(PrintUtils.indent(msg, lvl))
+            ToolboxConfig.logger.info(PrintUtils.indent(msg, lvl))
 
     @staticmethod
     def error(msg, lvl=0):
         """Print red text with indentation based on level."""
         msg = TerminalColors.RED.value + msg + TerminalColors.RESET.value
         print(PrintUtils.indent(msg, lvl))
-        logger.error(msg)
+        ToolboxConfig.logger.error(msg)
 
     @staticmethod
     def success(msg, lvl=0):
         """Print green text with indentation based on level."""
         msg = TerminalColors.GREEN.value + msg + TerminalColors.RESET.value
         print(PrintUtils.indent(msg, lvl))
-        logger.info(msg)
+        ToolboxConfig.logger.info(msg)
 
     @staticmethod
     def warning(msg, lvl=0):
         """Print orange text with indentation based on level."""
         msg = TerminalColors.ORANGE.value + msg + TerminalColors.RESET.value
         print(PrintUtils.indent(msg, lvl))
-        logger.warning(msg)
+        ToolboxConfig.logger.warning(msg)
 
     @staticmethod
     def log(msg, lvl=0):
         """Log info message with indentation based on level."""
         msg = PrintUtils.indent(msg, lvl)
-        logger.info(msg)
+        ToolboxConfig.logger.info(msg)
 
 
 class DotDict(dict):
