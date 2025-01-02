@@ -98,6 +98,15 @@ Evaluate which duplicates have the best criteria for keeping and can be kept whi
 make nd.eval-deletable
 ```
 
+The criteria to decide on the media file to keep is as follows:
+
+1. Media file is in an album, which already contains another media file which is keepable.
+1. Media file has a MusicBrainz recording ID.
+1. Media file has an artist record available in the Navidrome database.
+1. Media file contains a album track number.
+1. Media file has a better bit rate than any of the other duplicate media files.
+1. Media file holds a release year.
+
 ## Acknowledgments
 
 This library is based on the important groundwork provided by the
