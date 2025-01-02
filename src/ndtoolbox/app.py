@@ -272,7 +272,7 @@ class DuplicateProcessor:
         """
         PU.info("Loading data from Navidrome database ", end="")
         for key in self.dups_input.keys():
-            PU.log(f"[*] Processing duplicate {key}")
+            PU.info(f"[*] Processing duplicate {key}")
             files = self.dups_input.get(key)
             self.stats.duplicate_records += 1
 
@@ -365,7 +365,7 @@ class DuplicateProcessor:
         Log information about the media file.
         """
         if media:
-            PU.log(f"└─ {media}", 1)
+            PU.info(f"└─ {media.path}", 1)
             self.stats.media_files += 1
             if media.annotation:
                 PU.log(f"└───── {media.annotation}", 2)
@@ -375,15 +375,16 @@ class DuplicateProcessor:
                 if media.artist.annotation:
                     PU.log(f"└───── {media.artist.annotation}", 3)
             else:
-                self.errors.append({"error": "artist not found", "path": file_path, "media": media})
-                PU.error(f"└───── Artist of '{media.path}' not found in database!", 2)
+                aid = media.album_id if media.album_id else ""
+                PU.warning(f"└───── Artist '{media.artist_name}' not found in database!", 2)
             if media.album:
                 PU.log(f"└───── {media.album}", 2)
                 if media.album.annotation:
                     PU.log(f"└───── {media.album.annotation}", 3)
             else:
                 # This is not seen as an error because not all media files have an album
-                PU.log(f"└───── Album of '{media.path}' not found in database!", 2)
+                aid = media.album_id if media.album_id else ""
+                PU.warning(f"└───── Album '{media.album_name}' not found in database!", 2)
         else:
             self.errors.append({"error": "media file not found", "path": file_path})
             PU.error(f"└───── Media file for '{file_path}' not found in database!", 1)
