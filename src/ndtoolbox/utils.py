@@ -19,10 +19,12 @@ class ToolboxConfig:
 
     timezone = None
     logger = None
+    pref_extensions = ["mp3", "flac"]
 
     nd_dir = None
     data_dir = None
     music_dir = None
+
     source_base = None
     target_base = None
 

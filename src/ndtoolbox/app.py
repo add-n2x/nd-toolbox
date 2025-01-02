@@ -156,11 +156,12 @@ class DuplicateProcessor:
         The logic to determine which file to keep is as follows, and in that order:
 
         1. Media file is in an album, which already contains another media file which is keepable.
-        2. Media file has a MusicBrainz recording ID.
-        3. Media file has an artist record available in the Navidrome database.
-        4. Media file contains a album track number.
-        5. Media file has a better bit rate than any of the other duplicate media files.
-        6. Media file holds a release year.
+        2. Media file has one of the preferred file extensions
+        3. Media file has a MusicBrainz recording ID.
+        4. Media file has an artist record available in the Navidrome database.
+        5. Media file contains a album track number.
+        6. Media file has a better bit rate than any of the other duplicate media files.
+        7. Media file holds a release year.
 
         Args:
             dups (MediaFile): A list of duplicate media files to evaluate for a keepable.
@@ -177,6 +178,17 @@ class DuplicateProcessor:
             left = this.album and this.album.has_keepable
             right = that.album and that.album.has_keepable
             PU.log(f"Compare if albums contain a keepable: {left} || {right}", 1)
+            if left != right:
+                if left:
+                    return this
+                elif right:
+                    return that
+            # Skip, if they are the same
+
+            # Having a preferred file extension is keepable
+            left = this.path.split(".")[-1].lower() in ToolboxConfig.pref_extensions
+            right = that.path.split(".")[-1].lower() in ToolboxConfig.pref_extensions
+            PU.log(f"Compare if file extension is keepable: {left} || {right}", 1)
             if left != right:
                 if left:
                     return this
