@@ -167,11 +167,12 @@ def test_get_keepable_media(processor: DuplicateProcessor):
     Test get keepable media logic.
 
     1. Media file is in an album, which already contains another media file which is keepable.
-    2. Media file has a MusicBrainz recording ID.
-    3. Media file has an artist record available in the Navidrome database.
-    4. Media file contains a album track number.
-    5. Media file has a better bit rate than any of the other duplicate media files.
-    6. Media file holds a release year.
+    2. Media file has one of the preferred file extensions
+    3. Media file has a MusicBrainz recording ID.
+    4. Media file has an artist record available in the Navidrome database.
+    5. Media file contains a album track number.
+    6. Media file has a better bit rate than any of the other duplicate media files.
+    7. Media file holds a release year.
     """
     dups = [
         MediaFile(
@@ -258,11 +259,25 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_name=None,
             mbz_recording_id="musicBrainzID",
         ),
-        # That's a keeper:
         MediaFile(
             id="17",
-            path="/path/to/file4.mp3",
+            path="/path/to/file4.mp4",
             title="File 7",
+            year=1990,
+            track_number=3,
+            duration=3600,
+            bitrate=320,
+            artist_id=0,
+            artist_name=None,
+            album_id=0,
+            album_name=None,
+            mbz_recording_id="musicBrainzID",
+        ),
+        # That's a keeper:
+        MediaFile(
+            id="18",
+            path="/path/to/file4.mp3",
+            title="File 8",
             year=1990,
             track_number=3,
             duration=3600,
@@ -322,8 +337,8 @@ def test_get_keepable_media(processor: DuplicateProcessor):
 
     # Now, eval the first list
     keeper = processor._get_keepable_media(dups)
-    assert keeper.id == dups[6].id
+    assert keeper.id == dups[7].id
     assert keeper.album is not None
     assert keeper.album.has_keepable is True
-    assert keeper.title == "File 7"
+    assert keeper.title == "File 8"
     assert keeper.bitrate == 320
