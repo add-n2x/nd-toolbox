@@ -6,6 +6,7 @@ import pytest
 
 from ndtoolbox.db import Annotation, NavidromeDb
 from ndtoolbox.model import MediaFile
+from ndtoolbox.utils import ToolboxConfig
 
 # Example data to use for testing
 TEST_DB_PATH = "test/data/navidrome.db"
@@ -20,7 +21,9 @@ test_media_file = MediaFile(
     duration=200,
     bitrate=160,
     artist_id=None,
+    artist_name=None,
     album_id=None,
+    album_name=None,
     mbz_recording_id=None,
 )
 
@@ -38,6 +41,7 @@ test_anno = Annotation(
 @pytest.fixture(scope="session")
 def db():
     """Fixture to provide a database connection for tests."""
+    ToolboxConfig()
     db = NavidromeDb(db_path=TEST_DB_PATH)
     yield db
 
