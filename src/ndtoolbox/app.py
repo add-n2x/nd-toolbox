@@ -12,7 +12,7 @@ import tomli
 
 from ndtoolbox.db import NavidromeDb
 from ndtoolbox.model import MediaFile
-from ndtoolbox.utils import CLI, DotDict, ToolboxConfig
+from ndtoolbox.utils import CLI, DotDict, FileTools, ToolboxConfig
 from ndtoolbox.utils import PrintUtils as PU
 
 
@@ -55,6 +55,7 @@ class DuplicateProcessor:
         navidrome_db_path = nd_folder + "/navidrome.db"
         PU.bold("Initializing DuplicateProcessor")
         PU.ln()
+        PU.info(f"Dry-run: {config.dry_run}")
         PU.info(f"Navidrome database path: {navidrome_db_path}")
         PU.info(f"Output folder: {data_folder}")
         PU.info(f"Source base: {source_base}")
@@ -416,7 +417,6 @@ class DuplicateProcessor:
                     PU.log(f"└───── {media.album.annotation}", 3)
             else:
                 # This is not seen as an error because not all media files have an album
-                aid = media.album_id if media.album_id else ""
                 PU.warning(f"└───── Album '{media.album_name}' not found in database!", 2)
         else:
             self.errors.append({"error": "media file not found", "path": file_path})
@@ -476,19 +476,18 @@ if __name__ == "__main__":
         PU.ln()
 
     # Read the action argument from the command line
-    action = sys.argv[1] if len(sys.argv) > 1 else None
+    action = sys.argv[1]
     action = action.split("action=")[1]
-
     processor = DuplicateProcessor(config.nd_dir, config.data_dir, config.source_base, config.target_base)
 
-    if action == "merge-annotations":
+    if action == "remove-unsupported":
+        FileTools.move_by_extension(config.music_dir, config.data_dir, config.remove_extensions)
+    elif action == "merge-annotations":
         processor.merge_and_store_annotations()
         processor.print_stats()
-        # processor.export_errors()
     elif action == "eval-deletable":
         processor.eval_deletable_duplicates()
         processor.print_stats()
-        # processor.export_errors()
     elif action == "delete-duplicates":
         processor.delete_duplicates()
     else:

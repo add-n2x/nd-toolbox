@@ -2,8 +2,10 @@
 Utility classes and functions for the ndtoolbox package.
 """
 
+import glob
 import logging
 import os
+import shutil
 import sys
 from datetime import datetime
 from enum import Enum
@@ -18,8 +20,10 @@ class ToolboxConfig:
     """
 
     timezone = None
+    dry_run: bool
     logger = None
-    pref_extensions = ["mp3", "flac"]
+    pref_extensions: list = None
+    remove_extensions: list = None
 
     nd_dir = None
     data_dir = None
@@ -28,11 +32,13 @@ class ToolboxConfig:
     source_base = None
     target_base = None
 
-    def __init__(self):
+    def __init__(self, dry_run: bool = True):
         """Init config from environment variables."""
         load_dotenv(find_dotenv())
-
         ToolboxConfig.timezone = os.getenv("TZ", "UTC")
+        ToolboxConfig.dry_run = False if os.getenv("DRY_RUN").lower() == "false" else True
+        ToolboxConfig.pref_extensions = os.getenv("PREFERRED_EXTENSIONS").split(" ")
+        ToolboxConfig.remove_extensions = os.getenv("UNSUPPORTED_EXTENSIONS").split(" ")
         ToolboxConfig.nd_dir = os.getenv("ND_DIR")
         ToolboxConfig.data_dir = os.getenv("DATA_DIR")
         ToolboxConfig.music_dir = os.getenv("MUSIC_DIR")
@@ -184,6 +190,46 @@ class PrintUtils:
         """Log info message with indentation based on level."""
         msg = PrintUtils.indent(msg, lvl)
         ToolboxConfig.logger.info(msg)
+
+
+class FileTools:
+    """
+    Utility class for file operations.
+    """
+
+    @staticmethod
+    def move_by_extension(source: str, target: str, extensions: list[str]):
+        """
+        Move files with specific extensions from source to target directory.
+
+        Args:
+            source (str): Source directory.
+            target (str): Target directory.
+            extensions (list): List of file extensions to move.
+        """
+        dry = ToolboxConfig.dry_run
+        if source.startswith("./"):
+            source = source[2:]
+        abs_target = os.path.join(os.path.abspath(target), "removed-media")
+        msg = f"[dry-run: {dry}] Moving files file in '{source}' having '{str(extensions)}' extensions, to '{target}'."
+        PrintUtils.info(msg)
+        for ext in extensions:
+            search = os.path.join(source, f"**/*.{ext}")
+            PrintUtils.info(f"[dry-run: {dry}] Searching .{ext} files ({search})", 1)
+            for file in glob.iglob(search, recursive=True):
+                PrintUtils.info(f"[dry-run: {dry}] Found '{file}'")
+
+                # Create folder hierarchy in target
+                abs_target_dir = os.path.join(abs_target, os.path.dirname(file))
+                PrintUtils.info(f"[dry-run: {dry}] Creating target directory: {abs_target_dir}", 2)
+                if not dry:
+                    os.makedirs(abs_target_dir, exist_ok=True)
+
+                # Move files
+                abs_file = os.path.abspath(file)
+                PrintUtils.info(f"[dry-run: {dry}] Move {abs_file} to {abs_target_dir}", 2)
+                if not dry:
+                    shutil.move(abs_file, abs_target_dir)
 
 
 class DotDict(dict):

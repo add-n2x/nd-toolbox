@@ -17,6 +17,7 @@ help::
 	@echo
 	@echo --[ $(shell poetry version) ]--
 	@echo
+	@echo "- sh.remove-unsupported		: remove unsupported media files from the music folder"
 	@echo "- beet.import    		: import music to beets library"
 	@echo "- beet.duplicatez  		: list duplicates with beets and export JSON"
 	@echo "- beet.reset       		: delete beets music library"
@@ -24,7 +25,7 @@ help::
 	@echo "- nd.merge-annotations		: read annotations of all duplicates, merge and store them"
 	@echo "- nd.eval-deletable		: evaluate deletable duplicates"
 	@echo
-	@echo "- dev.init			: init app"	
+	@echo "- dev.init			: init app"
 	@echo "- dev.shell			: start app shell"
 	@echo "- dev.spell        		: run spell check"
 	@echo "- dev.ruff         		: format code"
@@ -38,8 +39,10 @@ help::
 
 ### App targets ###
 
+sh.remove-unsupported::
+	poetry run python src/ndtoolbox/app.py action=remove-unsupported
 beet.import::
-	beet import -A $(MUSIC_DIR) -p 
+	beet import -A $(MUSIC_DIR) -p
 beet.duplicatez::
 	beet duplicatez
 beet.reset::
@@ -94,3 +97,4 @@ docker.run::
 		-v ./data:/data  \
 		-e TZ=${TIMEZONE} \
 		--entrypoint bash nd-toolbox
+
