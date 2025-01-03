@@ -6,7 +6,7 @@ from ndtoolbox.app import DuplicateProcessor
 from ndtoolbox.model import Album, Annotation, MediaFile
 from ndtoolbox.utils import ToolboxConfig
 
-ND_DIR = "test/data"
+ND_DATABASE_PATH = "test/data/navidrome.db"
 DATA_DIR = "test/data"
 BEETS_BASE_PATH = "/app/music"
 ND_BASE_PATH = "/music/library"
@@ -16,7 +16,7 @@ ND_BASE_PATH = "/music/library"
 def processor():
     """Fixture to create a DuplicateProcessor instance."""
     ToolboxConfig()
-    processor = DuplicateProcessor(ND_DIR, DATA_DIR, BEETS_BASE_PATH, ND_BASE_PATH)
+    processor = DuplicateProcessor(ND_DATABASE_PATH, DATA_DIR, BEETS_BASE_PATH, ND_BASE_PATH)
     yield processor
 
 
