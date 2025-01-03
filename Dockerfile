@@ -10,10 +10,14 @@ LABEL maintainer="David Trattnig <david@subsquare.at>"
 # APP CONFIGURATION
 #
 
-# Timezone
 ENV TZ=Vienna/Europe
-# Local directory where the music files are stored. 
+ENV LOG_LEVEL=INFO
+ENV DRY_RUN=true
+
 # This is used by Beets and Navidrome.
+# Files with these extensions will be removed from the music directory. 
+ENV UNSUPPORTED_EXTENSIONS="m4p mp4 mp2"
+# Local directory where the music files are stored. 
 ENV MUSIC_DIR=/music
 # Folder to access logs and other processing data
 ENV DATA_DIR=/data
