@@ -1,5 +1,6 @@
 """Test module for the DuplicateProcessor class."""
 
+import datetime
 import pytest
 
 from ndtoolbox.app import DuplicateProcessor
@@ -65,19 +66,44 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
         item_id="2",
         item_type=Annotation.Type.media_file,
         play_count=5,
-        play_date="2023-01-02",
-        rating=4,
+        play_date="2023-02-02",
+        rating=3,
         starred=False,
         starred_at=None,
     )
 
-    # Call the merge_annotation_data method
-    processor._merge_annotation_data(a, b)
-    assert a.annotation.play_count == 15
-    assert a.annotation.play_date == "2023-01-02"
-    assert a.annotation.rating == 5
-    assert a.annotation.starred
-    assert b.annotation.starred
+    c = MediaFile(
+        id="3",
+        path="/path/to/file3.mp3",
+        title="File 3",
+        year=1993,
+        track_number=3,
+        duration=3600,
+        bitrate=320,
+        artist_id=None,
+        artist_name=None,
+        album_id=None,
+        album_name=None,
+        mbz_recording_id="recording-2",
+    )
+    c.annotation = Annotation(
+        item_id="3",
+        item_type=Annotation.Type.media_file,
+        play_count=None,
+        play_date=None,
+        rating=None,
+        starred=None,
+        starred_at="2025-05-07",
+    )
+
+    dups = [a, b, c]
+    (play_count, play_date, rating, starred, starred_at) = processor._get_merged_annotation(dups)
+
+    assert play_count == 10
+    assert play_date == datetime.datetime(2023, 2, 2, 0, 0)
+    assert rating == 5
+    assert starred is True
+    assert starred_at == datetime.datetime(2025, 5, 7, 0, 0)
 
 
 def test_merge_annotation_list(processor: DuplicateProcessor):
@@ -85,7 +111,7 @@ def test_merge_annotation_list(processor: DuplicateProcessor):
     # Create a list of four Media files with annotations
     files = [
         MediaFile(
-            id="1",
+            id="11",
             path="/path/to/file1.mp3",
             title="File 1",
             year=1993,
@@ -99,7 +125,7 @@ def test_merge_annotation_list(processor: DuplicateProcessor):
             mbz_recording_id="recording-1",
         ),
         MediaFile(
-            id="2",
+            id="22",
             path="/path/to/file2.mp3",
             title="File 2",
             year=1993,
@@ -113,7 +139,7 @@ def test_merge_annotation_list(processor: DuplicateProcessor):
             mbz_recording_id="recording-2",
         ),
         MediaFile(
-            id="3",
+            id="33",
             path="/path/to/file3.mp3",
             title="File 3",
             year=1993,
@@ -127,7 +153,7 @@ def test_merge_annotation_list(processor: DuplicateProcessor):
             mbz_recording_id="recording-3",
         ),
         MediaFile(
-            id="4",
+            id="44",
             path="/path/to/file4.mp3",
             title="File 4",
             year=1993,
@@ -146,20 +172,21 @@ def test_merge_annotation_list(processor: DuplicateProcessor):
         f.annotation = Annotation(
             item_id=f.id,
             item_type=Annotation.Type.media_file,
-            play_count=f.id if int(f.id) > 1 else 0,  # File 1 has no play count, others have 2, 3 and 4 plays
+            play_count=f.id if int(f.id) > 20 else 0,  # File 1 has no play count, others have 22, 33 and 44 plays
             play_date="2023-01-01",
-            rating=int(f.id),  # Ratings from 1 to 4
-            starred=f.id == "2" or f.id == "4",  # Files 2 and 4 are starred
+            rating=int(int(f.id) / 10),  # Ratings from 1 to 4
+            starred=f.id == "22" or f.id == "44",  # Files 2 and 4 are starred
             starred_at="2022-01-01",
         )
 
     # Set up the processor with the test files
-    processor.dups_media_files = {"key123": files}
-    processor._merge_annotation_list()
+    processor._merge_annotation_list({"key123": files})
 
-    assert files[0].annotation.play_count == 9
-    assert files[0].annotation.rating == 4
-    assert files[0].annotation.starred
+    for f in files:
+        print("Play count: " + str(f.annotation.play_count))
+        assert f.annotation.play_count == 44
+        assert f.annotation.rating == 4
+        assert f.annotation.starred is True
 
 
 def test_get_keepable_media(processor: DuplicateProcessor):

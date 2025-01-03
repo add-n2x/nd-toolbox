@@ -1,7 +1,5 @@
 """Test cases for the NavidromeDb class."""
 
-from datetime import datetime
-
 import pytest
 
 from ndtoolbox.db import Annotation, NavidromeDb
@@ -102,10 +100,10 @@ def test_store_annotation(db: NavidromeDb):
         item_id="999",
         item_type=Annotation.Type.album,
         play_count=5,
-        play_date=datetime.now(),
+        play_date="2013-04-18 00:13:37",
         rating=4,
         starred=True,
-        starred_at=datetime.now(),
+        starred_at="2013-04-18 00:13:37",
     )
     # Store the annotation in the database
     db.store_annotation(new_anno)
