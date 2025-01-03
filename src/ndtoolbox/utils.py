@@ -14,53 +14,6 @@ import colorlog
 from dotenv import find_dotenv, load_dotenv
 
 
-class ToolboxConfig:
-    """
-    Configuration class for ND Toolbox.
-    """
-
-    timezone = None
-    dry_run: bool
-    logger = None
-    pref_extensions: list = None
-    remove_extensions: list = None
-
-    nd_dir = None
-    data_dir = None
-    music_dir = None
-
-    source_base = None
-    target_base = None
-
-    def __init__(self, dry_run: bool = True):
-        """Init config from environment variables."""
-        load_dotenv(find_dotenv())
-        ToolboxConfig.timezone = os.getenv("TZ", "UTC")
-        ToolboxConfig.dry_run = False if os.getenv("DRY_RUN").lower() == "false" else True
-        ToolboxConfig.pref_extensions = os.getenv("PREFERRED_EXTENSIONS").split(" ")
-        ToolboxConfig.remove_extensions = os.getenv("UNSUPPORTED_EXTENSIONS").split(" ")
-        ToolboxConfig.nd_dir = os.getenv("ND_DIR")
-        ToolboxConfig.data_dir = os.getenv("DATA_DIR")
-        ToolboxConfig.music_dir = os.getenv("MUSIC_DIR")
-        ToolboxConfig.source_base = os.getenv("BEETS_BASE_PATH")
-        ToolboxConfig.target_base = os.getenv("ND_BASE_PATH")
-
-        # Setup logger
-        log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-        if log_level not in logging._nameToLevel:
-            raise ValueError(f"Invalid LOG_LEVEL: {log_level}")
-        log_file = ToolboxConfig.data_dir + "/nd-toolbox.log"
-        ToolboxConfig.logger = colorlog.getLogger("ndtoolbox")
-        colorlog.basicConfig(
-            filename=log_file,
-            filemode="w",
-            encoding="utf-8",
-            level=log_level,
-            format="%(log_color)s %(msecs)d %(name)s %(levelname)s %(message)s",
-        )
-        print(f"Initialized logger with level: {log_level} and log file: {log_file}")
-
-
 class DateUtil:
     """Utility class for date operations."""
 
@@ -198,7 +151,7 @@ class FileTools:
     """
 
     @staticmethod
-    def move_by_extension(source: str, target: str, extensions: list[str]):
+    def move_by_extension(source: str, target: str, extensions: list[str], dry: bool):
         """
         Move files with specific extensions from source to target directory.
 
@@ -206,8 +159,8 @@ class FileTools:
             source (str): Source directory.
             target (str): Target directory.
             extensions (list): List of file extensions to move.
+            dry (bool): Dry-run mode.
         """
-        dry = ToolboxConfig.dry_run
         if source.startswith("./"):
             source = source[2:]
         abs_target = os.path.join(os.path.abspath(target), "removed-media")
@@ -230,6 +183,61 @@ class FileTools:
                 PrintUtils.info(f"[dry-run: {dry}] Move {abs_file} to {abs_target_dir}", 2)
                 if not dry:
                     shutil.move(abs_file, abs_target_dir)
+
+
+class ToolboxConfig:
+    """
+    Configuration class for ND Toolbox.
+    """
+
+    timezone: str = None
+    dry_run: bool = None
+    logger: logging.Logger = None
+    pref_extensions: list = None
+    remove_extensions: list = None
+    navidrome_db_path: str = None
+    nd_dir: str = None
+    data_dir: str = None
+    music_dir: str = None
+    source_base: str = None
+    target_base: str = None
+
+    def __init__(self, dry_run: bool = True):
+        """Init config from environment variables."""
+        load_dotenv(find_dotenv())
+        ToolboxConfig.timezone = os.getenv("TZ", "UTC")
+        ToolboxConfig.dry_run = False if os.getenv("DRY_RUN").lower() == "false" else True
+        ToolboxConfig.pref_extensions = os.getenv("PREFERRED_EXTENSIONS").split(" ")
+        ToolboxConfig.remove_extensions = os.getenv("UNSUPPORTED_EXTENSIONS").split(" ")
+        ToolboxConfig.nd_dir = os.getenv("ND_DIR")
+        ToolboxConfig.navidrome_db_path = os.path.join(ToolboxConfig.nd_dir, "navidrome.db")
+        ToolboxConfig.data_dir = os.getenv("DATA_DIR")
+        ToolboxConfig.music_dir = os.getenv("MUSIC_DIR")
+        ToolboxConfig.source_base = os.getenv("BEETS_BASE_PATH")
+        ToolboxConfig.target_base = os.getenv("ND_BASE_PATH")
+
+        # Setup logger
+        log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+        if log_level not in logging._nameToLevel:
+            raise ValueError(f"Invalid LOG_LEVEL: {log_level}")
+        log_file = os.path.join(ToolboxConfig.data_dir, "nd-toolbox.log")
+        ToolboxConfig.logger = colorlog.getLogger("ndtoolbox")
+        colorlog.basicConfig(
+            filename=log_file,
+            filemode="w",
+            encoding="utf-8",
+            level=log_level,
+            format="%(log_color)s %(msecs)d %(name)s %(levelname)s %(message)s",
+        )
+        PrintUtils.info(f"Initialized logger with level: {log_level} and log file: {log_file}")
+
+        PrintUtils.bold("Initializing configuration")
+        PrintUtils.ln()
+        PrintUtils.info(f"Dry-run: {ToolboxConfig.dry_run}")
+        PrintUtils.info(f"Navidrome database path: {self.navidrome_db_path}")
+        PrintUtils.info(f"Output folder: {ToolboxConfig.data_dir}")
+        PrintUtils.info(f"Source base: {ToolboxConfig.source_base}")
+        PrintUtils.info(f"Target base: {ToolboxConfig.target_base}")
 
 
 class DotDict(dict):
