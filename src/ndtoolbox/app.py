@@ -2,11 +2,11 @@
 This module provides functionality to process duplicate media files.
 """
 
-import datetime
 import json
 import os
 import sys
 import unicodedata
+from datetime import datetime
 
 import jsonpickle
 import tomli
@@ -324,12 +324,15 @@ class DuplicateProcessor:
                 self._log_info(file, media)
         PU.success("> Done.")
 
-    def _merge_annotation_list(self):
+    def _merge_annotation_list(self, dups_media_files: dict[str, list[MediaFile]]):
         """
         Merge data of all media file annotations referred to as duplicates.
+
+        Args:
+           dups_media_files (dict[str, list[MediaFile]]): Dictionary of media files grouped by their key.
         """
         dups: list[MediaFile]
-        for key, dups in self.dups_media_files.items():
+        for key, dups in dups_media_files.items():
             title = dups[0].title
             if dups[0].artist:
                 title = f"{dups[0].artist.name} - {title}"
@@ -339,50 +342,56 @@ class DuplicateProcessor:
             if len(dups) < 2:
                 PU.warning("> No duplicates to be merged. Skipping.", 1)
                 continue
-            for dup in dups[1 : len(dups)]:
-                self._merge_annotation_data(dups[0], dup)
-            PU.success("> Merged successfully.")
+            # for dup in dups[1 : len(dups)]:
+            #     self._merge_annotation_data(dups[0], dup)
+            (play_count, play_date, rating, starred, starred_at) = self._get_merged_annotation(dups)
+            for dup in dups:
+                dup.annotation.play_count = play_count
+                dup.annotation.play_date = play_date
+                dup.annotation.rating = rating
+                dup.annotation.starred = starred
+                dup.annotation.starred_at = starred_at
+            PU.success(
+                f"> Merged annotations (play_count={play_count}, play_date={play_date}, rating={rating}, \
+                    starred={starred}, starred_at={starred_at})"
+            )
 
-    def _merge_annotation_data(self, a: MediaFile, b: MediaFile):
+    def _get_merged_annotation(self, dups: list[MediaFile]) -> tuple[int, datetime, int, bool, datetime]:
         """
-        Merge annotation data of two MediaFile objects.
+        Get merged annotation data from a list of MediaFile objects.
+
+        Args:
+            dups (list[MediaFile]): List of duplicate media files.
+
+        Returns:
+            tuple[int, datetime, int, bool, datetime]: The merged annotation data.
         """
-        aa = a.annotation
-        ba = b.annotation
-        PU.log(f"Merging annotations for {aa} and {ba} ...")
+        play_count: int = 0
+        play_date: datetime = None
+        rating: int = 0
+        starred: bool = False
+        starred_at: datetime = None
 
-        if aa and ba:
-            # Combine play counts
-            aa.play_count += int(ba.play_count)
-            ba.play_count = aa.play_count
-            PU.log(f"Combined play count: {aa.play_count}", 1)
-            if aa.play_date and ba.play_date:
-                if aa.play_date > ba.play_date:
-                    ba.play_date = aa.play_date
-                else:
-                    aa.play_date = ba.play_date
-            PU.log(f"Updated play date: {aa.play_date}", 1)
+        for dup in dups:
+            a = dup.annotation
+            if a.play_count > play_count:
+                play_count = a.play_count
+            if a.play_date:
+                if not play_date:
+                    play_date = a.play_date
+                elif a.play_date > play_date:
+                    play_date = a.play_date
+            if a.rating > rating:
+                rating = a.rating
+            if a.starred:
+                starred = True
+            if a.starred_at:
+                if not starred_at:
+                    starred_at = a.starred_at
+                elif a.starred_at > starred_at:
+                    starred_at = a.starred_at
 
-            # Keep the better rating
-            if aa.rating and ba.rating:
-                if aa.rating > ba.rating:
-                    ba.rating = aa.rating
-                else:
-                    aa.rating = ba.rating
-            elif aa.rating and not ba.rating:
-                ba.rating = aa.rating
-            elif not aa.rating and ba.rating:
-                aa.rating = ba.rating
-            PU.log(f"Merged rating: {aa.rating}", 1)
-
-            # If one is starred, both are starred
-            if aa.starred and not ba.starred:
-                ba.starred = True
-                ba.starred_at = aa.starred_at
-            elif not aa.starred and ba.starred:
-                aa.starred = True
-                aa.starred_at = ba.starred_at
-            PU.log(f"Is starred: {aa.starred}", 1)
+        return (play_count, play_date, rating, starred, starred_at)
 
     def _save_all_annotations(self):
         """
@@ -453,11 +462,11 @@ class DuplicateProcessor:
 
     def _start(self):
         """Start the operation."""
-        self.start = datetime.datetime.now().timestamp()
+        self.start = datetime.now().timestamp()
 
     def _stop(self):
         """Stop the operation."""
-        self.stop = datetime.datetime.now().timestamp()
+        self.stop = datetime.now().timestamp()
 
     def _get_duration(self) -> float:
         """Get the duration of the operation in seconds."""
