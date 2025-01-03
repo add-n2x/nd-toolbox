@@ -54,6 +54,23 @@ For all command first log into the container with:
 docker exec -it nd-toolbox bash
 ```
 
+### Remove files with unsupported extensions
+
+Remove files with unsupported extensions from your music library. This is useful to clean up your library before 
+importing it into Beets. Set the envinronment variable `UNSUPPORTED_EXTENSIONS` to a list of extensions you want to 
+remove. Defaults to `m4p mp4 mp2`.
+
+```bash
+make sh.remove-unsupported
+```
+
+By default it performs a dry-run, without actually moving files. Pass an `DRY_RUN=false` argument to actually move 
+files. Moved files are moved to a `removed-media` directory inside your `DATA_DIR`.
+
+```bash
+make sh.remove-unsupported DRY_RUN=true
+```
+
 ### Import music into internal library
 
 Import music into your internal Beets library. This is required for further processing.
