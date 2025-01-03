@@ -6,6 +6,8 @@ import datetime
 from enum import Enum
 from typing import Optional
 
+from ndtoolbox.utils import DateUtil as DU
+
 
 class Annotation:
     """
@@ -50,11 +52,11 @@ class Annotation:
         """Init instance."""
         self.item_id = item_id
         self.item_type = item_type
-        self.play_count = play_count
-        self.play_date = play_date
-        self.rating = rating
-        self.starred = starred
-        self.starred_at = starred_at
+        self.play_count = int(play_count) if play_count else 0
+        self.play_date = DU.parse_date(play_date) if play_date else None
+        self.rating = int(rating) if rating else 0
+        self.starred = bool(starred) if starred else False
+        self.starred_at = DU.parse_date(starred_at) if starred_at else None
 
     def __repr__(self) -> str:
         """Instance representation."""

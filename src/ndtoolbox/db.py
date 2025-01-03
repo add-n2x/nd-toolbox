@@ -281,11 +281,11 @@ class NavidromeDb:
             return Annotation(
                 item_id,
                 type,
-                result[0],
-                DU.parse_date(result[1]),
+                int(result[0]),
+                result[1],
                 result[2],
                 result[3],
-                DU.parse_date(result[4]),
+                result[4],
             )
 
     def store_annotation(self, annotation: Annotation):
