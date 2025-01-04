@@ -121,6 +121,7 @@ The criteria to decide on the media file to keep is as follows:
 1. Media file has one of the preferred file extensions
 1. Media file has a MusicBrainz recording ID.
 1. Media file has an artist record available in the Navidrome database.
+1. Media file has an album record available in the Navidrome database.
 1. Media file contains a album track number.
 1. Media file has a better bit rate than any of the other duplicate media files.
 1. Media file holds a release year.
