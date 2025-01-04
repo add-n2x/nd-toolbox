@@ -7,7 +7,7 @@ import jsonpickle
 import pytest
 
 from ndtoolbox.app import DuplicateProcessor
-from ndtoolbox.model import Album, Annotation, MediaFile
+from ndtoolbox.model import Album, Annotation, Artist, MediaFile
 from ndtoolbox.utils import ToolboxConfig
 
 ND_DATABASE_PATH = "test/data/navidrome.db"
@@ -212,9 +212,10 @@ def test_get_keepable_media(processor: DuplicateProcessor):
     2. Media file has one of the preferred file extensions
     3. Media file has a MusicBrainz recording ID.
     4. Media file has an artist record available in the Navidrome database.
-    5. Media file contains a album track number.
-    6. Media file has a better bit rate than any of the other duplicate media files.
-    7. Media file holds a release year.
+    5. Media file has an album record available in the Navidrome database.
+    6. Media file contains a album track number.
+    7. Media file has a better bit rate than any of the other duplicate media files.
+    8. Media file holds a release year.
     """
     dups = [
         MediaFile(
@@ -364,6 +365,42 @@ def test_get_keepable_media(processor: DuplicateProcessor):
         ),
     ]
 
+    dups3 = [
+        MediaFile(
+            # That's a keeper:
+            id="no_artist_media",
+            path="/path/to/file4.mp3",
+            title="The Song",
+            year=1990,
+            track_number=1,
+            duration=3600,
+            bitrate=1024,
+            artist_id=0,
+            artist_name=None,
+            album_id=0,
+            album_name=None,
+            mbz_recording_id=None,
+        ),
+        MediaFile(
+            id="artist_keeper_id",
+            path="/path/to/file4.mp3",
+            title="The Song (remastered)",
+            year=None,
+            track_number=1,
+            duration=3600,
+            bitrate=1024,
+            artist_id=0,
+            artist_name=None,
+            album_id=0,
+            album_name=None,
+            mbz_recording_id=None,
+        ),
+    ]
+
+    artist = Artist(id="artist-1", name="Artist 1", album_count=33)
+    dups[-2].artist = artist
+    dups3[-1].artist = artist
+
     album = Album(id="album-1", name="Album 1", artist_id="artist-1", song_count=13)
     # for dup in dups[4:-1]:
     dups[-1].album = album
@@ -384,3 +421,8 @@ def test_get_keepable_media(processor: DuplicateProcessor):
     assert keeper.album.has_keepable is True
     assert keeper.title == "File 8"
     assert keeper.bitrate == 320
+
+    # Eval the thirt list
+    keeper = processor._get_keepable_media(dups3)
+    assert keeper.id == "artist_keeper_id"
+    assert keeper.artist is not None
