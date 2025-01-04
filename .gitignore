@@ -10,3 +10,5 @@
 __pycache__
 .DS_Store
 /.env
+/test/data/test-data.json
+/test/data/nd-toolbox-data.json
