@@ -10,10 +10,11 @@ from datetime import datetime
 
 import jsonpickle
 import tomli
+from easydict import EasyDict
 
 from ndtoolbox.db import NavidromeDb
 from ndtoolbox.model import MediaFile
-from ndtoolbox.utils import CLI, DotDict, FileTools, ToolboxConfig
+from ndtoolbox.utils import CLI, FileTools, ToolboxConfig
 from ndtoolbox.utils import PrintUtils as PU
 
 
@@ -25,7 +26,7 @@ class DuplicateProcessor:
         db (NavidromeDb): The Navidrome database DAO.
         dups_input (dict): A dictionary containing the raw duplicate media files references from Beets.
         dups_media_files (dict): A dictionary containing the enhanced duplicate media files with data from Navidrome.
-        stats (DotDict): A dictionary containing statistics about the processing of duplicate media files.
+        stats (EasyDict): A dictionary containing statistics about the processing of duplicate media files.
         errors (list): A list to store any errors encountered during processing.
         data_folder (str): The path to the data folder where processed files will be saved.
         source_base (str): The base path for source media files in Beets.
@@ -37,7 +38,7 @@ class DuplicateProcessor:
     db: NavidromeDb
     dups_input: dict
     dups_media_files: dict
-    stats: DotDict
+    stats: EasyDict
     errors: list
 
     data_folder: str
@@ -81,7 +82,7 @@ class DuplicateProcessor:
 
         # Init logging objects.
         self.errors = []
-        self.stats = DotDict(
+        self.stats = EasyDict(
             {
                 "duplicate_records": 0,
                 "duplicate_files": 0,
@@ -100,11 +101,11 @@ class DuplicateProcessor:
         Merge annotations per duplicate records and store them to the database.
         """
         self._start()
-        self._load_navidrome_data()
+        self.load_navidrome_data_file()
         PU.bold("Merging and storing annotations for duplicate records")
         PU.ln()
-        self._merge_annotation_list()
-        self._save_all_annotations()
+        self._merge_annotation_list(self.dups_media_files)
+        self._save_all_annotations(self.dups_media_files)
         self._stop()
 
     def eval_deletable_duplicates(self):
@@ -112,7 +113,7 @@ class DuplicateProcessor:
         Detect deletable duplicate files based on the provided criteria.
         """
         self._start()
-        self._load_navidrome_data()
+        self.load_navidrome_data_file()
         PU.bold("Evaluating deletable duplicates based on criteria")
         PU.ln()
         for key, dups in self.dups_media_files.items():
@@ -132,21 +133,55 @@ class DuplicateProcessor:
         """
         pass
 
-    def _load_navidrome_data(self):
+    def load_navidrome_database(self):
         """
         Load data from Navidrome database.
         """
+        self._start()
+        file_path = os.path.join(self.data_folder, "nd-toolbox-data.json")
         PU.bold("Loading duplicate records from Navidrome database")
         PU.ln()
+
+        # Check for existing data file
+        if os.path.isfile(file_path):
+            PU.note(f"Data file '{file_path}' existing already.")
+            PU.note("Do you want to continue anyway and overwrite existing data?")
+            CLI.ask_continue()
+
+        # Load data
         self._replace_base_path()
         self._query_media_data()
 
-        # Check for errors before proceeding. If there are errors,
-        # ask the user if they want to continue.
-        if processor.has_errors():
-            PU.error("Errors encountered during processing. Please review the error log.")
-            PU.error("Do you want to continue anyway (not recommended)?")
+        # Persist data
+        data = {"dups_media_files": self.dups_media_files, "stats": self.stats, "errors": self.errors}
+        with open(file_path, "w", encoding="utf-8") as file:
+            file.write(jsonpickle.encode(data, indent=4, keys=True))
+        PU.success(f"Stored Navidrome data to '{file_path}'")
+        self._stop()
+        self._print_stats()
+
+    def load_navidrome_data_file(self):
+        """
+        Load data from a previously saved JSON file.
+        """
+        data_file_path = os.path.join(self.data_folder, "nd-toolbox-data.json")
+        errors_file_path = os.path.join(self.data_folder, "errors.json")
+
+        # Check for existing errors file
+        if os.path.isfile(errors_file_path):
+            PU.error(f"Errors file '{errors_file_path}' found.")
+            PU.note("Have you checked the errors and decided to continue anyway?")
             CLI.ask_continue()
+
+        PU.bold("Loading duplicate records from JSON file")
+        PU.ln()
+        # Load data from JSON file
+        with open(data_file_path, "r", encoding="utf-8") as file:
+            data = jsonpickle.decode(file.read())
+            self.dups_media_files = data["dups_media_files"]
+            self.stats = data["stats"]
+            self.errors = data["errors"]
+            PU.success(f"Loaded duplicate records from '{data_file_path}'")
 
     def _get_keepable_media(self, dups: list[MediaFile]) -> MediaFile:
         """
@@ -320,7 +355,8 @@ class DuplicateProcessor:
 
                 PU.log(f"    Query {file}")
                 media: MediaFile = self.db.get_media(file)
-                self.dups_media_files[key].append(media)
+                if media:
+                    self.dups_media_files[key].append(media)
                 self._log_info(file, media)
         PU.success("> Done.")
 
@@ -333,6 +369,12 @@ class DuplicateProcessor:
         """
         dups: list[MediaFile]
         for key, dups in dups_media_files.items():
+            # Skip, if there are no duplicates left
+            if not dups or len(dups) <= 1:
+                PU.warning("> No duplicate media files found for key '{key}'. Skipping.")
+                continue
+
+            # Build title for logging purposes.
             title = dups[0].title
             if dups[0].artist:
                 title = f"{dups[0].artist.name} - {title}"
@@ -342,8 +384,8 @@ class DuplicateProcessor:
             if len(dups) < 2:
                 PU.warning("> No duplicates to be merged. Skipping.", 1)
                 continue
-            # for dup in dups[1 : len(dups)]:
-            #     self._merge_annotation_data(dups[0], dup)
+
+            # Get merged annotation data from duplicates.
             (play_count, play_date, rating, starred, starred_at) = self._get_merged_annotation(dups)
             for dup in dups:
                 dup.annotation.play_count = play_count
@@ -351,10 +393,8 @@ class DuplicateProcessor:
                 dup.annotation.rating = rating
                 dup.annotation.starred = starred
                 dup.annotation.starred_at = starred_at
-            PU.success(
-                f"> Merged annotations (play_count={play_count}, play_date={play_date}, rating={rating}, \
-                    starred={starred}, starred_at={starred_at})"
-            )
+            msg = f"> Merged annotations (play_count={play_count}, play_date={play_date}, rating={rating}, starred={starred}, starred_at={starred_at})"
+            PU.success(msg)
 
     def _get_merged_annotation(self, dups: list[MediaFile]) -> tuple[int, datetime, int, bool, datetime]:
         """
@@ -379,7 +419,7 @@ class DuplicateProcessor:
             if a.play_date:
                 if not play_date:
                     play_date = a.play_date
-                elif a.play_date > play_date:
+                elif a.play_date.timestamp() > play_date.timestamp():
                     play_date = a.play_date
             if a.rating > rating:
                 rating = a.rating
@@ -388,16 +428,16 @@ class DuplicateProcessor:
             if a.starred_at:
                 if not starred_at:
                     starred_at = a.starred_at
-                elif a.starred_at > starred_at:
+                elif a.starred_at.timestamp() > starred_at.timestamp():
                     starred_at = a.starred_at
 
         return (play_count, play_date, rating, starred, starred_at)
 
-    def _save_all_annotations(self):
+    def _save_all_annotations(self, dups_media_files: dict[str, list[MediaFile]]):
         """
         Save all annotations of all media file duplicates to the database.
         """
-        for _, dups in self.dups_media_files.items():
+        for _, dups in dups_media_files.items():
             for media in dups:
                 self.db.store_annotation(media.annotation)
 
@@ -426,39 +466,34 @@ class DuplicateProcessor:
                 # This is not seen as an error because not all media files have an album
                 PU.warning(f"└───── Album '{media.album_name}' not found in database!", 2)
         else:
-            self.errors.append({"error": "media file not found", "path": file_path})
-            PU.error(f"└───── Media file for '{file_path}' not found in database!", 1)
+            self.errors.append({"error": "media file not found.", "path": file_path})
+            PU.error(f"└───── Media file for '{file_path}' not found in database! Exclude from processing.", 1)
 
-    def print_stats(self):
+    def _print_stats(self):
         """Print statistics about the processing."""
-        if len(self.errors) > 0:
-            self.export_errors()
-        else:
-            PU.bold("\nSTATS")
-            PU.ln()
-            PU.info("Duplicates:", 0)
-            PU.info(f"Records: {self.stats.duplicate_records}", 1)
-            PU.info(f"Files: {self.stats.duplicate_files}", 1)
-            PU.info(f"Artists: {len(self.db.artists)}", 1)
-            PU.info(f"Albums: {len(self.db.albums)}", 1)
-            PU.info("")
-            PU.info("Media files:", 0)
-            PU.info(f"Found: {self.stats.media_files}", 1)
-            PU.info(f"Annotations: {self.stats.file_annotations}", 1)
-            PU.info(f"Deletables: {self.stats.media_files_deletable}", 1)
-            PU.ln()
-            PU.success("No errors found.")
-            PU.success(f"Finished in {self._get_duration()} seconds")
-
-    def export_errors(self):
-        """Export errors to a JSON file."""
-        PU.bold("\nERRORS")
+        PU.bold("\nSTATS")
         PU.ln()
-        error_file = self.data_folder + "/errors.json"
-        PU.error(f"Exporting {len(self.errors)} errors to {error_file} ... ", end="")
-        with open(error_file, "w") as f:
-            json.dump(self.errors, f, indent=4)
-        PU.error("Done!")
+        PU.info("Duplicates:", 0)
+        PU.info(f"Records: {self.stats.duplicate_records}", 1)
+        PU.info(f"Files: {self.stats.duplicate_files}", 1)
+        PU.info(f"Artists: {len(self.db.artists)}", 1)
+        PU.info(f"Albums: {len(self.db.albums)}", 1)
+        PU.info("")
+        PU.info("Media files:", 0)
+        PU.info(f"Found: {self.stats.media_files}", 1)
+        PU.info(f"Annotations: {self.stats.file_annotations}", 1)
+        PU.info(f"Deletables: {self.stats.media_files_deletable}", 1)
+        PU.ln()
+        if len(self.errors) > 0:
+            PU.bold("\nERRORS")
+            PU.ln()
+            error_file = self.data_folder + "/errors.json"
+            PU.error(f"Please review {len(self.errors)} errors saved to {error_file} ... ")
+            with open(error_file, "w") as f:
+                json.dump(self.errors, f, indent=4)
+        else:
+            PU.success("No errors found.")
+        PU.success(f"Finished in {self._get_duration()}")
 
     def _start(self):
         """Start the operation."""
@@ -470,7 +505,11 @@ class DuplicateProcessor:
 
     def _get_duration(self) -> float:
         """Get the duration of the operation in seconds."""
-        return round(self.stop - self.start, 2)
+        duration = round(self.stop - self.start, 2)
+        if duration > 60:
+            return f"{round(duration / 60, 2)} minutes"
+        else:
+            return f"{duration} seconds"
 
 
 if __name__ == "__main__":
@@ -489,12 +528,14 @@ if __name__ == "__main__":
 
     if action == "remove-unsupported":
         FileTools.move_by_extension(config.music_dir, config.data_dir, config.remove_extensions, ToolboxConfig.dry_run)
+    elif action == "load-duplicates":
+        processor.load_navidrome_database()
     elif action == "merge-annotations":
         processor.merge_and_store_annotations()
-        processor.print_stats()
+        processor._print_stats()
     elif action == "eval-deletable":
         processor.eval_deletable_duplicates()
-        processor.print_stats()
+        processor._print_stats()
     elif action == "delete-duplicates":
         processor.delete_duplicates()
     else:
