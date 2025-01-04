@@ -193,9 +193,10 @@ class DuplicateProcessor:
         2. Media file has one of the preferred file extensions
         3. Media file has a MusicBrainz recording ID.
         4. Media file has an artist record available in the Navidrome database.
-        5. Media file contains a album track number.
-        6. Media file has a better bit rate than any of the other duplicate media files.
-        7. Media file holds a release year.
+        5. Media file has an album record available in the Navidrome database.
+        6. Media file contains a album track number.
+        7. Media file has a better bit rate than any of the other duplicate media files.
+        8. Media file holds a release year.
 
         Args:
             dups (MediaFile): A list of duplicate media files to evaluate for a keepable.
@@ -245,6 +246,17 @@ class DuplicateProcessor:
             left = this.artist is not None
             right = that.artist is not None
             PU.log(f"Artist record available: {left} || {right}", 1)
+            if left != right:
+                if left:
+                    return this
+                elif right:
+                    return that
+            # Skip, if they are the same
+
+            # Having album record in Navidrome is keepable
+            left = this.album is not None
+            right = that.album is not None
+            PU.log(f"Album record available: {left} || {right}", 1)
             if left != right:
                 if left:
                     return this
