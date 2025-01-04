@@ -85,6 +85,7 @@ class DuplicateProcessor:
                 "duplicate_files": 0,
                 "media_files": 0,
                 "file_annotations": 0,
+                "media_files_deletable": 0,
             }
         )
 
@@ -482,7 +483,6 @@ class DuplicateProcessor:
                 if media.artist.annotation:
                     PU.log(f"└───── {media.artist.annotation}", 3)
             else:
-                aid = media.album_id if media.album_id else ""
                 PU.warning(f"└───── Artist '{media.artist_name}' not found in database!", 2)
             if media.album:
                 PU.log(f"└───── {media.album}", 2)
