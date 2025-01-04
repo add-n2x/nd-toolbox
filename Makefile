@@ -22,6 +22,7 @@ help::
 	@echo "- beet.duplicatez  		: list duplicates with beets and export JSON"
 	@echo "- beet.reset       		: delete beets music library"
 	@echo "- nd.backup			: backup the Navidrome database to 'data/backup'"
+	@echo "- nd.load-duplicates		: load duplicates data from Navidrome"
 	@echo "- nd.merge-annotations		: read annotations of all duplicates, merge and store them"
 	@echo "- nd.eval-deletable		: evaluate deletable duplicates"
 	@echo
@@ -54,6 +55,8 @@ nd.backup::
 	mkdir -p $(DATA_DIR)/backup
 	cp $(ND_DIR)/navidrome.db $(BACKUP_FILE)
 	@echo "Backed up Navidrome database to $(BACKUP_FILE)"
+nd.load-duplicates::
+	poetry run python src/ndtoolbox/app.py action=load-duplicates
 nd.merge-annotations:: nd.backup
 nd.merge-annotations::
 	rm -f data/error.json
