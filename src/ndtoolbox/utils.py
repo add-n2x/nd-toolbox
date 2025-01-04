@@ -139,6 +139,13 @@ class PrintUtils:
         ToolboxConfig.logger.warning(msg)
 
     @staticmethod
+    def note(msg, lvl=0):
+        """Print note text with indentation based on level."""
+        msg = TerminalColors.BLUE.value + msg + TerminalColors.RESET.value
+        print(PrintUtils.indent(msg, lvl))
+        ToolboxConfig.logger.info(msg)
+
+    @staticmethod
     def log(msg, lvl=0):
         """Log info message with indentation based on level."""
         msg = PrintUtils.indent(msg, lvl)
@@ -238,13 +245,3 @@ class ToolboxConfig:
         PrintUtils.info(f"Output folder: {ToolboxConfig.data_dir}")
         PrintUtils.info(f"Source base: {ToolboxConfig.source_base}")
         PrintUtils.info(f"Target base: {ToolboxConfig.target_base}")
-
-
-class DotDict(dict):
-    """
-    Wrap a dictionary with `DotDict()` to allow property access using the dot.notation.
-    """
-
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
