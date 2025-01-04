@@ -124,7 +124,7 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
     a.annotation = Annotation(
         item_id="1",
         item_type=Annotation.Type.media_file,
-        play_count=10,
+        play_count=5,
         play_date="2023-01-01",
         rating=5,
         starred=True,
@@ -148,7 +148,7 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
     b.annotation = Annotation(
         item_id="2",
         item_type=Annotation.Type.media_file,
-        play_count=5,
+        play_count=10,
         play_date="2023-02-02",
         rating=3,
         starred=False,
@@ -179,6 +179,23 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
         starred_at="2025-05-07",
     )
 
+    assert a.annotation.play_count == 5
+    assert b.annotation.play_count == 10
+    assert c.annotation.play_count == 0
+    assert a.annotation.rating == 5
+    assert b.annotation.rating == 3
+    assert c.annotation.rating == 0
+    assert a.annotation.starred is True
+    assert b.annotation.starred is False
+    assert c.annotation.starred is False
+    assert a.annotation.starred_at == datetime.datetime(2022, 1, 1, 0, 0)
+    assert b.annotation.starred_at is None
+    assert c.annotation.starred_at == datetime.datetime(2025, 5, 7, 0, 0)
+    assert a.annotation.play_date == datetime.datetime(2023, 1, 1, 0, 0)
+    assert b.annotation.play_date == datetime.datetime(2023, 2, 2, 0, 0)
+    assert c.annotation.play_date is None
+
+    # Merge annotations
     dups = [a, b, c]
     (play_count, play_date, rating, starred, starred_at) = processor._get_merged_annotation(dups)
 
@@ -187,6 +204,31 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
     assert rating == 5
     assert starred is True
     assert starred_at == datetime.datetime(2025, 5, 7, 0, 0)
+
+    # Calling the merge several times should keep the same annotation data
+    (play_count, play_date, rating, starred, starred_at) = processor._get_merged_annotation(dups)
+    (play_count, play_date, rating, starred, starred_at) = processor._get_merged_annotation(dups)
+
+    assert play_count == 10
+    assert play_date == datetime.datetime(2023, 2, 2, 0, 0)
+    assert rating == 5
+    assert starred is True
+    assert starred_at == datetime.datetime(2025, 5, 7, 0, 0)
+
+    processor._merge_annotation_list({"key": dups})
+
+    assert a.annotation.play_count == 10
+    assert b.annotation.play_count == 10
+    assert c.annotation.play_count == 10
+    assert a.annotation.rating == 5
+    assert b.annotation.rating == 5
+    assert c.annotation.rating == 5
+    assert a.annotation.starred is True
+    assert b.annotation.starred is True
+    assert c.annotation.starred is True
+    assert a.annotation.starred_at == datetime.datetime(2025, 5, 7, 0, 0)
+    assert b.annotation.starred_at == datetime.datetime(2025, 5, 7, 0, 0)
+    assert c.annotation.starred_at == datetime.datetime(2025, 5, 7, 0, 0)
 
 
 def test_merge_annotation_list(processor: DuplicateProcessor):
