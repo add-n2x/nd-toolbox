@@ -192,7 +192,7 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
 def test_merge_annotation_list(processor: DuplicateProcessor):
     """Test the merge_annotation_list method."""
     # Create a list of four Media files with annotations
-    files = copy(FILES)
+    files = copy.copy(FILES)
 
     # Set up the processor with the test files
     processor._merge_annotation_list({"key123": files})
