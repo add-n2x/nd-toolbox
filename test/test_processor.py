@@ -1,6 +1,9 @@
 """Test module for the DuplicateProcessor class."""
 
+import copy
 import datetime
+
+import jsonpickle
 import pytest
 
 from ndtoolbox.app import DuplicateProcessor
@@ -8,17 +11,97 @@ from ndtoolbox.model import Album, Annotation, MediaFile
 from ndtoolbox.utils import ToolboxConfig
 
 ND_DATABASE_PATH = "test/data/navidrome.db"
+ND_DATA_FILE = "data/nd-toolbox-data.json"
+ND_DATA_FILE = "test/data/nd-toolbox-data.json"
 DATA_DIR = "test/data"
 BEETS_BASE_PATH = "/app/music"
 ND_BASE_PATH = "/music/library"
+
+FILES = [
+    MediaFile(
+        id="11",
+        path="/path/to/file1.mp3",
+        title="File 1",
+        year=1993,
+        track_number=3,
+        duration=3600,
+        bitrate=320,
+        artist_id=None,
+        artist_name=None,
+        album_id=None,
+        album_name=None,
+        mbz_recording_id="recording-1",
+    ),
+    MediaFile(
+        id="22",
+        path="/path/to/file2.mp3",
+        title="File 2",
+        year=1993,
+        track_number=3,
+        duration=3600,
+        bitrate=320,
+        artist_id=None,
+        artist_name=None,
+        album_id=None,
+        album_name=None,
+        mbz_recording_id="recording-2",
+    ),
+    MediaFile(
+        id="33",
+        path="/path/to/file3.mp3",
+        title="File 3",
+        year=1993,
+        track_number=3,
+        duration=3600,
+        bitrate=320,
+        artist_id=None,
+        artist_name=None,
+        album_id=None,
+        album_name=None,
+        mbz_recording_id="recording-3",
+    ),
+    MediaFile(
+        id="44",
+        path="/path/to/file4.mp3",
+        title="File 4",
+        year=1993,
+        track_number=3,
+        duration=3600,
+        bitrate=320,
+        artist_id=None,
+        artist_name=None,
+        album_id=None,
+        album_name=None,
+        mbz_recording_id="recording-3",
+    ),
+]
+# Set annotations for each file
+for f in FILES:
+    f.annotation = Annotation(
+        item_id=f.id,
+        item_type=Annotation.Type.media_file,
+        play_count=f.id if int(f.id) > 20 else 0,  # File 1 has no play count, others have 22, 33 and 44 plays
+        play_date="2023-01-01",
+        rating=int(int(f.id) / 10),  # Ratings from 1 to 4
+        starred=f.id == "22" or f.id == "44",  # Files 2 and 4 are starred
+        starred_at="2022-01-01",
+    )
 
 
 @pytest.fixture(scope="session")
 def processor():
     """Fixture to create a DuplicateProcessor instance."""
-    ToolboxConfig()
+    ToolboxConfig(False)
     processor = DuplicateProcessor(ND_DATABASE_PATH, DATA_DIR, BEETS_BASE_PATH, ND_BASE_PATH)
     yield processor
+
+
+def test_encode_decode_json_pickle(processor: DuplicateProcessor):
+    """Test encoding and decoding of JSON using jsonpickle."""
+    file_path = "test/data/test-data.json"
+    data = {"dups_media_files": FILES, "stats": "bbb", "errors": []}
+    with open(file_path, "w", encoding="utf-8") as file:
+        file.write(jsonpickle.encode(data, indent=4, keys=True))
 
 
 def test_merge_annotation_data(processor: DuplicateProcessor):
@@ -109,75 +192,7 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
 def test_merge_annotation_list(processor: DuplicateProcessor):
     """Test the merge_annotation_list method."""
     # Create a list of four Media files with annotations
-    files = [
-        MediaFile(
-            id="11",
-            path="/path/to/file1.mp3",
-            title="File 1",
-            year=1993,
-            track_number=3,
-            duration=3600,
-            bitrate=320,
-            artist_id=None,
-            artist_name=None,
-            album_id=None,
-            album_name=None,
-            mbz_recording_id="recording-1",
-        ),
-        MediaFile(
-            id="22",
-            path="/path/to/file2.mp3",
-            title="File 2",
-            year=1993,
-            track_number=3,
-            duration=3600,
-            bitrate=320,
-            artist_id=None,
-            artist_name=None,
-            album_id=None,
-            album_name=None,
-            mbz_recording_id="recording-2",
-        ),
-        MediaFile(
-            id="33",
-            path="/path/to/file3.mp3",
-            title="File 3",
-            year=1993,
-            track_number=3,
-            duration=3600,
-            bitrate=320,
-            artist_id=None,
-            artist_name=None,
-            album_id=None,
-            album_name=None,
-            mbz_recording_id="recording-3",
-        ),
-        MediaFile(
-            id="44",
-            path="/path/to/file4.mp3",
-            title="File 4",
-            year=1993,
-            track_number=3,
-            duration=3600,
-            bitrate=320,
-            artist_id=None,
-            artist_name=None,
-            album_id=None,
-            album_name=None,
-            mbz_recording_id="recording-3",
-        ),
-    ]
-    # Set annotations for each file
-    for f in files:
-        f.annotation = Annotation(
-            item_id=f.id,
-            item_type=Annotation.Type.media_file,
-            play_count=f.id if int(f.id) > 20 else 0,  # File 1 has no play count, others have 22, 33 and 44 plays
-            play_date="2023-01-01",
-            rating=int(int(f.id) / 10),  # Ratings from 1 to 4
-            starred=f.id == "22" or f.id == "44",  # Files 2 and 4 are starred
-            starred_at="2022-01-01",
-        )
+    files = copy(FILES)
 
     # Set up the processor with the test files
     processor._merge_annotation_list({"key123": files})
