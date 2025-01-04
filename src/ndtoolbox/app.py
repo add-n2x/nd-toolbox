@@ -85,7 +85,6 @@ class DuplicateProcessor:
                 "duplicate_files": 0,
                 "media_files": 0,
                 "file_annotations": 0,
-                "media_files_deletable": 0,
             }
         )
 
@@ -161,7 +160,7 @@ class DuplicateProcessor:
             CLI.ask_continue()
 
         # Load data.
-        self._replace_base_path()
+        self._replace_base_path(dups_input)
         self._query_media_data(dups_input)
 
         # Persist data.
@@ -334,11 +333,15 @@ class DuplicateProcessor:
             PU.log(f"\nDeletable: {removed}", 1)
             return self._get_keepable_media(child_dups)
 
-    def _replace_base_path(self):
+    def _replace_base_path(self, dups_input: dict[str, list[MediaFile]]):
         """
         Replace the music library base location with the actual location.
 
         This is required since the base paths of files may differ between the Beets and Navidrome library.
+
+        Args:
+            dups_input (dict[str, list[str]]): A dictionary where the keys are duplicate identifiers and the values
+                are lists of file paths.
         """
         if not self.source_base or not self.target_base:
             PU.warning("Skipping base path update, since no paths are set")
@@ -347,7 +350,7 @@ class DuplicateProcessor:
             PU.warning("Skipping base path update as target equals source")
             return
 
-        for paths in self.dups_input.values():
+        for paths in dups_input.values():
             for i, item in enumerate(paths):
                 paths[i] = item.replace(self.source_base, self.target_base, 1)
         PU.info(f"Updated all base paths from '{self.source_base}' to '{self.target_base}'.")
@@ -505,7 +508,6 @@ class DuplicateProcessor:
         PU.info("Media files:", 0)
         PU.info(f"Found: {self.stats.media_files}", 1)
         PU.info(f"Annotations: {self.stats.file_annotations}", 1)
-        PU.info(f"Deletables: {self.stats.media_files_deletable}", 1)
         PU.ln()
         if self.has_errors():
             PU.error(f"Please review {len(self.errors)} errors in {self.ERROR_REPORT_JSON} ... ")
