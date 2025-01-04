@@ -105,8 +105,14 @@ class DuplicateProcessor:
         PU.bold("Merging and storing annotations for duplicate records")
         PU.ln()
         self._merge_annotation_list(self.dups_media_files)
-        self._save_all_annotations(self.dups_media_files)
+        n: int = 0
+        for _, dups in self.dups_media_files.items():
+            for media in dups:
+                self.db.store_annotation(media.annotation)
+                n += 1
+        PU.success(f"> Successfully updated annotations for {n} media files in the Navidrome database.")
         self._stop()
+        PU.success(f"Finished in {self._get_duration()}")
 
     def eval_deletable_duplicates(self):
         """
@@ -544,10 +550,8 @@ if __name__ == "__main__":
         processor.load_navidrome_database()
     elif action == "merge-annotations":
         processor.merge_and_store_annotations()
-        processor._print_stats()
     elif action == "eval-deletable":
         processor.eval_deletable_duplicates()
-        processor._print_stats()
     elif action == "delete-duplicates":
         processor.delete_duplicates()
     else:
