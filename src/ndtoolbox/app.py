@@ -14,7 +14,7 @@ from easydict import EasyDict
 
 from ndtoolbox.db import NavidromeDb
 from ndtoolbox.model import Annotation, MediaFile
-from ndtoolbox.utils import CLI, FileTools, StringUtil, ToolboxConfig
+from ndtoolbox.utils import CLI, FileTools, FileUtil, ToolboxConfig
 from ndtoolbox.utils import PrintUtils as PU
 
 
@@ -134,12 +134,12 @@ class DuplicateProcessor:
         PU.info("List duplicates per album folder:")
         PU.ln()
         for folder, dups in dup_folders.items():
-            PU.info(f"\n{StringUtil.get_folder(dups[0].path)} [Album: {dups[0].album_name}]")
+            PU.info(f"\n{FileUtil.get_folder(dups[0].path)} [Album: {dups[0].album_name}]")
             for dup in dups:
                 if dup.is_deletable:
-                    PU.error(f"- DELETE > {StringUtil.get_file(dup.path)}", 1)
+                    PU.error(f"- DELETE > {FileUtil.get_file(dup.path)}", 1)
                 else:
-                    PU.success(f"- KEEP   > {StringUtil.get_file(dup.path)}", 1)
+                    PU.success(f"- KEEP   > {FileUtil.get_file(dup.path)}", 1)
 
         PU.ln()
         PU.info(f"Files to keep: {self.stats.media_files_keepable}")
@@ -223,7 +223,7 @@ class DuplicateProcessor:
             dup: MediaFile
             PU.success(f"Processing {len(dups)} duplicates --------")
             for dup in dups:
-                album_folder = StringUtil.get_folder(dup.path)
+                album_folder = FileUtil.get_folder(dup.path)
                 if not album_dups.get(album_folder):
                     album_dups[album_folder] = []
 
@@ -273,8 +273,8 @@ class DuplicateProcessor:
             # Skip, if they are the same
 
             # If file paths are equal, except one contains a numeric suffix, keep the other
-            left = StringUtil.equal_file_with_numeric_suffix(this.path, that.path)
-            right = StringUtil.equal_file_with_numeric_suffix(that.path, this.path)
+            left = FileUtil.equal_file_with_numeric_suffix(this.path, that.path)
+            right = FileUtil.equal_file_with_numeric_suffix(that.path, this.path)
             PU.info(f"Compare paths with numeric suffix: {right} || {left}", 1)
             if left or right:
                 if left:
@@ -284,8 +284,8 @@ class DuplicateProcessor:
             # Skip, if none is a suffixed path
 
             # If the filename is closer to the track title, it is keepable
-            left = StringUtil.fuzzy_match(this.path, this)
-            right = StringUtil.fuzzy_match(that.path, that)
+            left = FileUtil.fuzzy_match(this.path, this)
+            right = FileUtil.fuzzy_match(that.path, that)
             PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
             if left != right:
                 if left > right:

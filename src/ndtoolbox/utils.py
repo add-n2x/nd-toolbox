@@ -16,7 +16,7 @@ from dotenv import find_dotenv, load_dotenv
 from fuzzywuzzy import fuzz
 
 
-class StringUtil:
+class FileUtil:
     """Utility class for string operations."""
 
     @staticmethod
