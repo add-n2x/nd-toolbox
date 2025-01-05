@@ -127,7 +127,7 @@ class MediaFile:
        album_name (str): The name of the album of the media file.
        album (Album): The album of the media file (optional).
        mbz_recording_id (str): The MusicBrainz recording ID of the media file.
-       has_keepable (bool): Indicates whether some of its media files is keepable.
+       is_deletable (bool): Indicates whether some of its media files is keepable.
     """
 
     id: str
@@ -145,7 +145,7 @@ class MediaFile:
     album_name: str
     album: Album
     mbz_recording_id: str
-    has_keepable: bool
+    is_deletable: bool
 
     def __init__(
         self,
@@ -178,7 +178,7 @@ class MediaFile:
         self.album = None
         self.mbz_recording_id = mbz_recording_id
         self.annotation = None
-        self.has_keepable = False
+        self.is_deletable = False
 
     def __repr__(self) -> str:
         """Instance representation."""
