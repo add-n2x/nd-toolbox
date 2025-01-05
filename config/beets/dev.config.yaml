@@ -5,6 +5,7 @@ import:
   move: no
   write: no
   autotag: no
+  log: ../../data/beets/beetslog.txt
 pluginpath:
     - src/beetsplug
 plugins: duplicates duplicatez
