@@ -13,7 +13,7 @@ import tomli
 from easydict import EasyDict
 
 from ndtoolbox.db import NavidromeDb
-from ndtoolbox.model import MediaFile
+from ndtoolbox.model import Annotation, MediaFile
 from ndtoolbox.utils import CLI, FileTools, StringUtil, ToolboxConfig
 from ndtoolbox.utils import PrintUtils as PU
 
@@ -127,6 +127,7 @@ class DuplicateProcessor:
         file_path = os.path.join(self.data_folder, "duplicates-with-keepers.json")
         with open(file_path, "w", encoding="utf-8") as file:
             file.write(jsonpickle.encode(self.dups_media_files, indent=4))
+        PU.ln()
         PU.success(f"Stored deletables and keepers to '{file_path}'")
         self._stop()
 
@@ -163,6 +164,7 @@ class DuplicateProcessor:
         # Load data.
         self._replace_base_path(dups_input)
         self._query_media_data(dups_input)
+        self.dups_media_files = self._split_duplicates_by_album(self.dups_media_files)
 
         # Persist data.
         data = {"dups_media_files": self.dups_media_files, "stats": self.stats}
@@ -191,22 +193,50 @@ class DuplicateProcessor:
             self.stats = data["stats"]
             PU.success(f"Loaded duplicate records from '{self.FILE_TOOLBOX_DATA_JSON}'")
 
+    def _split_duplicates_by_album(self, dups_media_files: dict[str, list[MediaFile]]) -> dict[str, list[MediaFile]]:
+        """
+        Split duplicates from different MusicBrainz albums, since they are not seen as duplicates.
+        """
+        PU.bold("Split duplicates by album")
+        PU.ln()
+        # Initialize dictionary to hold duplicates grouped by album ID or MusicBrainz album ID.
+        album_dups: dict[str, list[MediaFile]] = EasyDict({})
+        for key, dups in dups_media_files.items():
+            dup: MediaFile
+            for dup in dups:
+                if dup.album and dup.album.mbz_album_id:
+                    # Group duplicates by MusicBrainz album ID.
+                    PU.info(f"Using MusicBrainz Album ID: {dup.album.mbz_album_id}: {dup.album.name}")
+                    if not album_dups.get(f"{key}:{dup.album.mbz_album_id}"):
+                        album_dups[f"{key}:{dup.album.mbz_album_id}"] = []
+                    album_dups[f"{key}:{dup.album.mbz_album_id}"].append(dup)
+                else:
+                    # If no MusicBrainz album ID is available, use the local album ID.
+                    msg = f"No MusicBrainz Album ID available. Using local album ID: {dup.album_id}: {dup.album.name}"
+                    PU.warning(msg)
+                    if not album_dups.get(f"{key}:{dup.album_id}"):
+                        album_dups[f"{key}:{dup.album_id}"] = []
+                    album_dups[f"{key}:{dup.album_id}"].append(dup)
+        PU.note(f"Organized duplicates in {len(album_dups)} albums")
+        return album_dups
+
     def _get_keepable_media(self, dups: list[MediaFile]) -> MediaFile:
         """
         Recursively determine which file is keepable based on the criteria.
 
         The logic to determine which file to keep is as follows, and in that order:
 
+        1. Media file is in an album, which already contains another media file which is keepable.
         1. Media files have equal filenames, but one has a numeric suffix, e.g., "song.mp3" and "song1.mp3".
            The one with the numeric suffix is considered less important and will be removed.
-        2. Media file is in an album, which already contains another media file which is keepable.
-        3. Media file has one of the preferred file extensions
-        4. Media file has a MusicBrainz recording ID.
-        5. Media file has an artist record available in the Navidrome database.
-        6. Media file has an album record available in the Navidrome database.
-        7. Media file contains a album track number.
-        8. Media file has a better bit rate than any of the other duplicate media files.
-        9. Media file holds a release year.
+        1. Media file title and filename are compared with fuzzy search. Higher ratio is a keeper.
+        1. Media file has one of the preferred file extensions
+        1. Media file has a MusicBrainz recording ID.
+        1. Media file has an artist record available in the Navidrome database.
+        1. Media file has an album record available in the Navidrome database.
+        1. Media file contains a album track number.
+        1. Media file has a better bit rate than any of the other duplicate media files.
+        1. Media file holds a release year.
 
         Args:
             dups (MediaFile): A list of duplicate media files to evaluate for a keepable.
@@ -219,23 +249,34 @@ class DuplicateProcessor:
         def is_keepable(this: MediaFile, that: MediaFile) -> MediaFile:
             PU.note(f"Compare {this.path} <=> {that.path}", 0)
 
-            # If file paths are equal, except one contains a numeric suffix, keep the other
-            left = StringUtil.equal_file_with_numeric_suffix(this.path, that.path)
-            right = StringUtil.equal_file_with_numeric_suffix(that.path, this.path)
-            PU.info(f"Compare paths with numeric suffix: {left} || {right}", 1)
-            if not left and not right:
-                if left:
-                    return this
-                elif right:
-                    return that
-            # Skip, if none is a suffixed path
-
             # If the files album already contains a keepable, we wanna keep all the items
             left = this.album and this.album.has_keepable
             right = that.album and that.album.has_keepable
             PU.info(f"Compare if albums contain a keepable: {left} || {right}", 1)
             if left != right:
                 if left:
+                    return this
+                elif right:
+                    return that
+            # Skip, if they are the same
+
+            # If file paths are equal, except one contains a numeric suffix, keep the other
+            left = StringUtil.equal_file_with_numeric_suffix(this.path, that.path)
+            right = StringUtil.equal_file_with_numeric_suffix(that.path, this.path)
+            PU.info(f"Compare paths with numeric suffix: {right} || {left}", 1)
+            if left or right:
+                if left:
+                    return this
+                elif right:
+                    return that
+            # Skip, if none is a suffixed path
+
+            # If the filename is closer to the track title, it is keepable
+            left = StringUtil.fuzzy_match(this.path, this)
+            right = StringUtil.fuzzy_match(that.path, that)
+            PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
+            if left != right:
+                if left > right:
                     return this
                 elif right:
                     return that
@@ -379,7 +420,9 @@ class DuplicateProcessor:
                 are lists of file paths.
         """
         PU.info("Loading data from Navidrome database ", end="")
+        i = 0
         for key in dups_input.keys():
+            i += 1
             PU.info(f"[*] Processing duplicate {key}")
             files = dups_input.get(key)
             self.stats.duplicate_records += 1
@@ -399,6 +442,8 @@ class DuplicateProcessor:
                 if media:
                     self.dups_media_files[key].append(media)
                 self._log_info(file, media)
+            if i > 100:
+                break
         PU.success("> Done.")
 
     def _merge_annotation_list(self, dups_media_files: dict[str, list[MediaFile]]):
@@ -454,7 +499,7 @@ class DuplicateProcessor:
         starred_at: datetime = None
 
         for dup in dups:
-            a = dup.annotation
+            a: Annotation = dup.annotation
             if a.play_count > play_count:
                 play_count = a.play_count
             if a.play_date:
