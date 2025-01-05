@@ -90,20 +90,22 @@ class Album:
     name: str
     artist_id: str
     song_count: int
+    mbz_album_id: str
     annotation: Optional[Annotation]
     has_keepable: bool
 
-    def __init__(self, id: str, name: str, artist_id: str, song_count: int):
+    def __init__(self, id: str, name: str, artist_id: str, song_count: int, mbz_album_id: str):
         """Init instance."""
         self.id = id
         self.name = name
         self.artist_id = artist_id
+        self.mbz_album_id = mbz_album_id
         self.song_count = song_count
         self.has_keepable = False
 
     def __repr__(self) -> str:
         """Instance representation."""
-        return f"Album(id={self.id}, name={self.name}, artist_id={self.artist_id}, song_count={self.song_count})"
+        return f"Album(id={self.id}, name={self.name}, artist_id={self.artist_id}, song_count={self.song_count}, mbz_album_id={self.mbz_album_id})"
 
 
 class MediaFile:

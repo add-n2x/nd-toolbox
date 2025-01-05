@@ -214,7 +214,7 @@ class NavidromeDb:
         """
         result = None
         query = """
-            SELECT name, artist_id, song_count
+            SELECT name, artist_id, song_count, mbz_album_id
             FROM album
             WHERE id LIKE ?
         """
@@ -225,7 +225,7 @@ class NavidromeDb:
             if not result:
                 return None
 
-        album = Album(album_id, result[0], result[1], result[2])
+        album = Album(album_id, result[0], result[1], result[2], result[3])
         album.annotation = self.get_media_annotation(media_file, Annotation.Type.album)
         # If no annotation exists, create one
         if not album.annotation:
