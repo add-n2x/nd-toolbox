@@ -14,7 +14,7 @@ from easydict import EasyDict
 
 from ndtoolbox.db import NavidromeDb
 from ndtoolbox.model import MediaFile
-from ndtoolbox.utils import CLI, FileTools, ToolboxConfig
+from ndtoolbox.utils import CLI, FileTools, StringUtil, ToolboxConfig
 from ndtoolbox.utils import PrintUtils as PU
 
 
@@ -197,14 +197,16 @@ class DuplicateProcessor:
 
         The logic to determine which file to keep is as follows, and in that order:
 
-        1. Media file is in an album, which already contains another media file which is keepable.
-        2. Media file has one of the preferred file extensions
-        3. Media file has a MusicBrainz recording ID.
-        4. Media file has an artist record available in the Navidrome database.
-        5. Media file has an album record available in the Navidrome database.
-        6. Media file contains a album track number.
-        7. Media file has a better bit rate than any of the other duplicate media files.
-        8. Media file holds a release year.
+        1. Media files have equal filenames, but one has a numeric suffix, e.g., "song.mp3" and "song1.mp3".
+           The one with the numeric suffix is considered less important and will be removed.
+        2. Media file is in an album, which already contains another media file which is keepable.
+        3. Media file has one of the preferred file extensions
+        4. Media file has a MusicBrainz recording ID.
+        5. Media file has an artist record available in the Navidrome database.
+        6. Media file has an album record available in the Navidrome database.
+        7. Media file contains a album track number.
+        8. Media file has a better bit rate than any of the other duplicate media files.
+        9. Media file holds a release year.
 
         Args:
             dups (MediaFile): A list of duplicate media files to evaluate for a keepable.
@@ -215,12 +217,23 @@ class DuplicateProcessor:
 
         # Define the criteria for keepable media
         def is_keepable(this: MediaFile, that: MediaFile) -> MediaFile:
-            PU.info(f"Compare {this.path} <=> {that.path}", 0)
+            PU.note(f"Compare {this.path} <=> {that.path}", 0)
+
+            # If file paths are equal, except one contains a numeric suffix, keep the other
+            left = StringUtil.equal_file_with_numeric_suffix(this.path, that.path)
+            right = StringUtil.equal_file_with_numeric_suffix(that.path, this.path)
+            PU.info(f"Compare paths with numeric suffix: {left} || {right}", 1)
+            if not left and not right:
+                if left:
+                    return this
+                elif right:
+                    return that
+            # Skip, if none is a suffixed path
 
             # If the files album already contains a keepable, we wanna keep all the items
             left = this.album and this.album.has_keepable
             right = that.album and that.album.has_keepable
-            PU.log(f"Compare if albums contain a keepable: {left} || {right}", 1)
+            PU.info(f"Compare if albums contain a keepable: {left} || {right}", 1)
             if left != right:
                 if left:
                     return this
@@ -231,7 +244,7 @@ class DuplicateProcessor:
             # Having a preferred file extension is keepable
             left = this.path.split(".")[-1].lower() in ToolboxConfig.pref_extensions
             right = that.path.split(".")[-1].lower() in ToolboxConfig.pref_extensions
-            PU.log(f"Compare if file extension is keepable: {left} || {right}", 1)
+            PU.info(f"Compare if file extension is keepable: {left} || {right}", 1)
             if left != right:
                 if left:
                     return this
@@ -242,7 +255,7 @@ class DuplicateProcessor:
             # Having a MusicBrainz recording ID is keepable
             left = this.mbz_recording_id is not None
             right = that.mbz_recording_id is not None
-            PU.log(f"Compare MusicBrainz recording ID: {left} || {right}", 1)
+            PU.info(f"Compare MusicBrainz recording ID: {left} || {right}", 1)
             if left != right:
                 if left:
                     return this
@@ -253,7 +266,7 @@ class DuplicateProcessor:
             # Having artist record in Navidrome is keepable
             left = this.artist is not None
             right = that.artist is not None
-            PU.log(f"Artist record available: {left} || {right}", 1)
+            PU.info(f"Artist record available: {left} || {right}", 1)
             if left != right:
                 if left:
                     return this
@@ -264,7 +277,7 @@ class DuplicateProcessor:
             # Having album record in Navidrome is keepable
             left = this.album is not None
             right = that.album is not None
-            PU.log(f"Album record available: {left} || {right}", 1)
+            PU.info(f"Album record available: {left} || {right}", 1)
             if left != right:
                 if left:
                     return this
@@ -275,7 +288,7 @@ class DuplicateProcessor:
             # Having track numbers is keepable
             left = this.track_number > 0
             right = that.track_number > 0
-            PU.log(f"Compare track numbers: {left} || {right}", 1)
+            PU.info(f"Compare track numbers: {left} || {right}", 1)
             if left != right:
                 if left:
                     return this
@@ -286,7 +299,7 @@ class DuplicateProcessor:
             # Higher bitrate is keepable
             left = this.bitrate
             right = that.bitrate
-            PU.log(f"Compare bitrate: {left} || {right}", 1)
+            PU.info(f"Compare bitrate: {left} || {right}", 1)
             if left > right:
                 return this
             elif left < right:
@@ -296,7 +309,7 @@ class DuplicateProcessor:
             # Year info is keepable
             left = this.year and this.year > 0
             right = that.year and this.year > 0
-            PU.log(f"Compare year info: {left} || {right}", 1)
+            PU.info(f"Compare year info: {left} || {right}", 1)
             if left != right:
                 if left:
                     return this
@@ -313,6 +326,7 @@ class DuplicateProcessor:
             # Mark related album as having a keepable duplicate
             if dups[0].album is not None:
                 dups[0].album.has_keepable = True
+            PU.success(f"Chosen keepable: {dups[0].path}")
             return dups[0]
         else:
             # Get the last item of the dups list:

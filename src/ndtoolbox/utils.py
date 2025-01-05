@@ -9,9 +9,27 @@ import shutil
 import sys
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
 
 import colorlog
 from dotenv import find_dotenv, load_dotenv
+
+
+class StringUtil:
+    """Utility class for string operations."""
+
+    @staticmethod
+    def equal_file_with_numeric_suffix(plain_file: str, suffix_file: str) -> bool:
+        """Check if two file names are equal, except the second string having a numeric suffix."""
+        _, plain_file = os.path.split(plain_file)
+        plain_file: str = Path(plain_file).stem
+        _, suffix_file = os.path.split(suffix_file)
+        suffix_file = suffix_file.removeprefix(plain_file)
+        suffix: str = Path(suffix_file).stem
+        if suffix and suffix.strip().isdigit():
+            return True
+
+        return False
 
 
 class DateUtil:
