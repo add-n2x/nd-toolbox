@@ -45,7 +45,7 @@ sh.remove-unsupported::
 beet.import::
 	beet import -A $(MUSIC_DIR) -p
 beet.duplicatez::
-	beet duplicatez
+	export BEETSDIR=$(BEETSDIR) && beet -v duplicatez
 beet.reset::
 	rm -f $(DATA_DIR)/beets/library.db
 	rm -f $(DATA_DIR)/beets/state.pickle
