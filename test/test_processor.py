@@ -250,14 +250,16 @@ def test_get_keepable_media(processor: DuplicateProcessor):
     """
     Test get keepable media logic.
 
-    1. Media file is in an album, which already contains another media file which is keepable.
-    2. Media file has one of the preferred file extensions
-    3. Media file has a MusicBrainz recording ID.
-    4. Media file has an artist record available in the Navidrome database.
-    5. Media file has an album record available in the Navidrome database.
-    6. Media file contains a album track number.
-    7. Media file has a better bit rate than any of the other duplicate media files.
-    8. Media file holds a release year.
+    1. Media files have equal filenames, but one has a numeric suffix, e.g., "song.mp3" and "song1.mp3".
+        The one with the numeric suffix is considered less important and will be removed.
+    2. Media file is in an album, which already contains another media file which is keepable.
+    3. Media file has one of the preferred file extensions
+    4. Media file has a MusicBrainz recording ID.
+    5. Media file has an artist record available in the Navidrome database.
+    6. Media file has an album record available in the Navidrome database.
+    7. Media file contains a album track number.
+    8. Media file has a better bit rate than any of the other duplicate media files.
+    9. Media file holds a release year.
     """
     dups = [
         MediaFile(
@@ -443,7 +445,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
     dups[-2].artist = artist
     dups3[-1].artist = artist
 
-    album = Album(id="album-1", name="Album 1", artist_id="artist-1", song_count=13)
+    album = Album(id="album-1", name="Album 1", artist_id="artist-1", song_count=13, mbz_album_id="mbz-album")
     # for dup in dups[4:-1]:
     dups[-1].album = album
     dups2[0].album = album
