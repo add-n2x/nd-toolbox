@@ -119,10 +119,10 @@ class DuplicateProcessor:
         self.load_navidrome_data_file()
         PU.bold("Evaluating deletable duplicates based on criteria")
         PU.ln()
-        for key, dups in self.dups_media_files.items():
-            PU.log(f"\nEvaluating {len(dups)} duplicates for: {key}")
+        for _, dups in self.dups_media_files.items():
+            PU.log(f"\n-> Evaluating {len(dups)} duplicates:")
             keepable = self._get_keepable_media(dups)
-            PU.log(f"\nFound keepable: {keepable}", 0)
+            PU.log(f"<- Found keepable: {keepable.path}", 0)
 
         file_path = os.path.join(self.data_folder, "duplicates-with-keepers.json")
         with open(file_path, "w", encoding="utf-8") as file:
@@ -359,7 +359,7 @@ class DuplicateProcessor:
             # Skip, if they are the same
 
             # If no conditition matches, it doesn't matter which one we take
-            PU.warning("No condition matched, keeping the other one (that)")
+            PU.warning(f"No condition matched, keeping the first one ({this.path})")
             return that
 
         # Keepable if there is only one duplicate
