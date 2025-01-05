@@ -37,9 +37,12 @@ class StringUtil:
         """Check if path and media file artist and title are similar using fuzzy matching."""
         _, file = os.path.split(path)
         file = Path(file).stem
-        r1 = fuzz.ratio(file, media.title)
-        r2 = fuzz.ratio(file, media.artist_name + " - " + media.title)
-        r3 = fuzz.ratio(file, media.artist_name + " - " + media.album_name + " - " + media.title)
+        title = str(media.title)
+        album = str(media.album_name)
+        artist = str(media.artist_name)
+        r1 = fuzz.ratio(file, title)
+        r2 = fuzz.ratio(file, artist + " - " + title)
+        r3 = fuzz.ratio(file, artist + " - " + album + " - " + title)
         # print(f"Got ratios for '{media.title}': {r1}, {r2}, {r3}")
         return max(r1, r2, r3)
 
