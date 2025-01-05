@@ -25,7 +25,7 @@ class StringUtil:
         _, plain_file = os.path.split(plain_file)
         plain_file: str = Path(plain_file).stem
         _, suffix_file = os.path.split(suffix_file)
-        suffix_file = suffix_file.removeprefix(plain_file)
+        suffix_file = suffix_file.lower().removeprefix(plain_file.lower())
         suffix: str = Path(suffix_file).stem
         if suffix and suffix.strip().isdigit():
             return True
@@ -45,6 +45,18 @@ class StringUtil:
         r3 = fuzz.ratio(file, artist + " - " + album + " - " + title)
         # print(f"Got ratios for '{media.title}': {r1}, {r2}, {r3}")
         return max(r1, r2, r3)
+
+    @staticmethod
+    def get_folder(path: str) -> str:
+        """Get folder from file path."""
+        folders, _ = os.path.split(path)
+        return folders
+
+    @staticmethod
+    def get_file(path: str) -> str:
+        """Get album folder from file path."""
+        _, file = os.path.split(path)
+        return file
 
 
 class DateUtil:
