@@ -85,6 +85,7 @@ class DuplicateProcessor:
                 "duplicate_files": 0,
                 "media_files": 0,
                 "file_annotations": 0,
+                "media_files_keepable": 0,
                 "media_files_deletable": 0,
             }
         )
@@ -127,7 +128,23 @@ class DuplicateProcessor:
         file_path = os.path.join(self.data_folder, "duplicates-with-keepers.json")
         with open(file_path, "w", encoding="utf-8") as file:
             file.write(jsonpickle.encode(self.dups_media_files, indent=4))
+
+        # Print the list of deletable and keepable duplicates per album
+        dup_folders = self._split_duplicates_by_album_folder(self.dups_media_files)
+        PU.info("List duplicates per album folder:")
         PU.ln()
+        for folder, dups in dup_folders.items():
+            PU.info(f"\n{StringUtil.get_folder(dups[0].path)} [Album: {dups[0].album_name}]")
+            for dup in dups:
+                if dup.is_deletable:
+                    PU.error(f"- DELETE > {StringUtil.get_file(dup.path)}", 1)
+                else:
+                    PU.success(f"- KEEP   > {StringUtil.get_file(dup.path)}", 1)
+
+        PU.ln()
+        PU.info(f"Files to keep: {self.stats.media_files_keepable}")
+        PU.info(f"Files to delete: {self.stats.media_files_deletable}")
+        PU.info(f"Total media files: {self.stats.media_files}")
         PU.success(f"Stored deletables and keepers to '{file_path}'")
         self._stop()
 
@@ -164,7 +181,6 @@ class DuplicateProcessor:
         # Load data.
         self._replace_base_path(dups_input)
         self._query_media_data(dups_input)
-        self.dups_media_files = self._split_duplicates_by_album(self.dups_media_files)
 
         # Persist data.
         data = {"dups_media_files": self.dups_media_files, "stats": self.stats}
@@ -193,7 +209,9 @@ class DuplicateProcessor:
             self.stats = data["stats"]
             PU.success(f"Loaded duplicate records from '{self.FILE_TOOLBOX_DATA_JSON}'")
 
-    def _split_duplicates_by_album(self, dups_media_files: dict[str, list[MediaFile]]) -> dict[str, list[MediaFile]]:
+    def _split_duplicates_by_album_folder(
+        self, dups_media_files: dict[str, list[MediaFile]]
+    ) -> dict[str, list[MediaFile]]:
         """
         Split duplicates from different MusicBrainz albums, since they are not seen as duplicates.
         """
@@ -201,22 +219,16 @@ class DuplicateProcessor:
         PU.ln()
         # Initialize dictionary to hold duplicates grouped by album ID or MusicBrainz album ID.
         album_dups: dict[str, list[MediaFile]] = EasyDict({})
-        for key, dups in dups_media_files.items():
+        for _, dups in dups_media_files.items():
             dup: MediaFile
+            PU.success(f"Processing {len(dups)} duplicates --------")
             for dup in dups:
-                if dup.album and dup.album.mbz_album_id:
-                    # Group duplicates by MusicBrainz album ID.
-                    PU.info(f"Using MusicBrainz Album ID: {dup.album.mbz_album_id}: {dup.album.name}")
-                    if not album_dups.get(f"{key}:{dup.album.mbz_album_id}"):
-                        album_dups[f"{key}:{dup.album.mbz_album_id}"] = []
-                    album_dups[f"{key}:{dup.album.mbz_album_id}"].append(dup)
-                else:
-                    # If no MusicBrainz album ID is available, use the local album ID.
-                    msg = f"No MusicBrainz Album ID available. Using local album ID: {dup.album_id}: {dup.album.name}"
-                    PU.warning(msg)
-                    if not album_dups.get(f"{key}:{dup.album_id}"):
-                        album_dups[f"{key}:{dup.album_id}"] = []
-                    album_dups[f"{key}:{dup.album_id}"].append(dup)
+                album_folder = StringUtil.get_folder(dup.path)
+                if not album_dups.get(album_folder):
+                    album_dups[album_folder] = []
+
+                album_dups[album_folder].append(dup)
+
         PU.note(f"Organized duplicates in {len(album_dups)} albums")
         return album_dups
 
@@ -367,6 +379,7 @@ class DuplicateProcessor:
             # Mark related album as having a keepable duplicate
             if dups[0].album is not None:
                 dups[0].album.has_keepable = True
+            self.stats.media_files_keepable += 1
             PU.success(f"Chosen keepable: {dups[0].path}")
             return dups[0]
         else:
@@ -384,7 +397,7 @@ class DuplicateProcessor:
                 child_dups.append(that)
                 removed = this
 
-            removed.deletable = True
+            removed.is_deletable = True
             self.stats.media_files_deletable += 1
             PU.log(f"\nDeletable: {removed}", 1)
             return self._get_keepable_media(child_dups)
@@ -420,9 +433,7 @@ class DuplicateProcessor:
                 are lists of file paths.
         """
         PU.info("Loading data from Navidrome database ", end="")
-        i = 0
         for key in dups_input.keys():
-            i += 1
             PU.info(f"[*] Processing duplicate {key}")
             files = dups_input.get(key)
             self.stats.duplicate_records += 1
@@ -442,8 +453,7 @@ class DuplicateProcessor:
                 if media:
                     self.dups_media_files[key].append(media)
                 self._log_info(file, media)
-            if i > 100:
-                break
+
         PU.success("> Done.")
 
     def _merge_annotation_list(self, dups_media_files: dict[str, list[MediaFile]]):
