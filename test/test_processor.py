@@ -428,7 +428,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
         ),
         MediaFile(
             id="artist_keeper_id",
-            path="/path/to/file4.mp3",
+            path="/path/to/The Song (remastered).mp3",
             title="The Song (remastered)",
             year=None,
             track_number=1,
