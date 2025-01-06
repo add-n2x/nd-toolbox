@@ -134,6 +134,7 @@ class StringUtil:
     BLUE = "\033[34m"
     PINK = "\033[35m"
     CYAN = "\033[36m"
+    GRAY = "\033[90m"
 
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
@@ -183,6 +184,11 @@ class StringUtil:
     def pink(text: str) -> str:
         """Format text as pink."""
         return f"{StringUtil.PINK}{text}{StringUtil.RESET}"
+
+    @staticmethod
+    def gray(text: str) -> str:
+        """Format text as gray."""
+        return f"{StringUtil.GRAY}{text}{StringUtil.RESET}"
 
 
 class PrintUtils:
