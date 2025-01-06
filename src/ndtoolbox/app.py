@@ -331,7 +331,7 @@ class DuplicateProcessor:
 
             # Having MusicBrainz album ID in Navidrome is keepable
             left = this.album.mbz_album_id if this.album else None
-            right = that.album is that.album.mbz_album_id if this.album else None
+            right = that.album.mbz_album_id if that.album else None
             PU.info(f"MusicBrainz Album ID available: {left} || {right}", 1)
             if left != right:
                 if left:
