@@ -600,7 +600,7 @@ class DuplicateProcessor:
 
         # Year info is keepable
         left = this.year and this.year > 0
-        right = that.year and this.year > 0
+        right = that.year and that.year > 0
         PU.info(f"Compare year info: {left} || {right}", 1)
         if left != right:
             if left:
@@ -626,8 +626,8 @@ class DuplicateProcessor:
 
         # If the album folder is closer to the album name, it is keepable
         left = FileUtil.fuzzy_match_album(FileUtil.get_album_folder(this.path), this)
-        right = FileUtil.fuzzy_match_album(FileUtil.get_album_folder(this.path), that)
-        PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
+        right = FileUtil.fuzzy_match_album(FileUtil.get_album_folder(that.path), that)
+        PU.info(f"Fuzzy match album name: {left} || {right}", 1)
         if left != right:
             if left > right:
                 that.delete_reason = f"Other album folder is closer to the album name  | {SU.gray(this.path)}"
@@ -639,7 +639,7 @@ class DuplicateProcessor:
 
         # If no conditition matches, it doesn't matter which one we take
         PU.warning(f"No condition matched, keeping this one ({this.path}), instead of that one ({that.path})")
-        this.delete_reason = f"No reason, no condition matched | {SU.gray(that.path)}"
+        this.delete_reason = f"No reason, since no condition matched | {SU.gray(that.path)}"
         return that
 
 
