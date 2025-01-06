@@ -239,178 +239,12 @@ class DuplicateProcessor:
         """
         Recursively determine which file is keepable based on the criteria.
 
-        The logic to determine which file to keep is as follows, and in that order:
-
-        1. Media file is in an album, which already contains another media file which is keepable.
-        1. Media files have equal filenames, but one has a numeric suffix, e.g., "song.mp3" and "song1.mp3".
-           The one with the numeric suffix is considered less important and will be removed.
-        1. Media file title and filename are compared with fuzzy search. Higher ratio is a keeper.
-        1. Media file has one of the preferred file extensions
-        1. Media file has a MusicBrainz recording ID.
-        1. Media file has an artist record available in the Navidrome database.
-        1. Media file has an album record available in the Navidrome database.
-        1. Media file contains a album track number.
-        1. Media file has a better bit rate than any of the other duplicate media files.
-        1. Media file holds a release year.
-
         Args:
             dups (MediaFile): A list of duplicate media files to evaluate for a keepable.
 
         Returns:
             MediaFile: The media file to keep.
         """
-
-        # Define the criteria for keepable media
-        def is_keepable(this: MediaFile, that: MediaFile) -> MediaFile:
-            PU.note(f"Compare {this.path} <=> {that.path}", 0)
-
-            # If the files album already contains a keepable, we wanna keep all the items
-            left = this.album and this.album.has_keepable
-            right = that.album and that.album.has_keepable
-            PU.info(f"Compare if album contain a keepable: {left} || {right}", 1)
-            if left != right:
-                if left:
-                    that.delete_reason = f"Other album already contains a keepable {this.path}"
-                    return this
-                elif right:
-                    this.delete_reason = f"Other album already contains a keepable {that.path}"
-                    return that
-            # Skip, if they are the same
-
-            # If file paths are equal, except one contains a numeric suffix, keep the other
-            left = FileUtil.equal_file_with_numeric_suffix(this.path, that.path)
-            right = FileUtil.equal_file_with_numeric_suffix(that.path, this.path)
-            PU.info(f"Compare paths with numeric suffix: {right} || {left}", 1)
-            if left or right:
-                if left:
-                    that.delete_reason = f"File has a numeric suffix (seems to be a copy) {this.path}"
-                    return this
-                elif right:
-                    this.delete_reason = f"File has a numeric suffix (seems to be a copy) {that.path}"
-                    return that
-            # Skip, if none is a suffixed path
-
-            # Having a preferred file extension is keepable
-            left = this.path.split(".")[-1].lower() in ToolboxConfig.pref_extensions
-            right = that.path.split(".")[-1].lower() in ToolboxConfig.pref_extensions
-            PU.info(f"Compare if file extension is keepable: {left} || {right}", 1)
-            if left != right:
-                if left:
-                    that.delete_reason = f"Other file has a preferred extension {this.path}"
-                    return this
-                elif right:
-                    this.delete_reason = f"Other file has a preferred extension {that.path}"
-                    return that
-            # Skip, if they are the same
-
-            # Having a MusicBrainz recording ID is keepable
-            left = this.mbz_recording_id is not None
-            right = that.mbz_recording_id is not None
-            PU.info(f"Compare MusicBrainz recording ID: {left} || {right}", 1)
-            if left != right:
-                if left:
-                    that.delete_reason = f"Other file has a MusicBrainz recording ID {this.path}"
-                    return this
-                elif right:
-                    this.delete_reason = f"Other file has a MusicBrainz recording ID {that.path}"
-                    return that
-            # Skip, if they are the same
-
-            # Having artist record in Navidrome is keepable
-            left = this.artist is not None
-            right = that.artist is not None
-            PU.info(f"Artist record available: {left} || {right}", 1)
-            if left != right:
-                if left:
-                    that.delete_reason = f"Other file has an artist record in Navidrome {this.path}"
-                    return this
-                elif right:
-                    this.delete_reason = f"Other file has an artist record in Navidrome {that.path}"
-                    return that
-            # Skip, if they are the same
-
-            # Having MusicBrainz album ID in Navidrome is keepable
-            left = this.album.mbz_album_id if this.album else None
-            right = that.album.mbz_album_id if that.album else None
-            PU.info(f"MusicBrainz Album ID available: {left} || {right}", 1)
-            if left != right:
-                if left:
-                    that.delete_reason = f"Other file has a MusicBrainz album ID {this.path}"
-                    return this
-                elif right:
-                    this.delete_reason = f"Other file has MusicBrainz album ID  {that.path}"
-                    return that
-            # Skip, if they are the same
-
-            # Having track numbers is keepable
-            left = this.track_number > 0
-            right = that.track_number > 0
-            PU.info(f"Compare track numbers: {left} || {right}", 1)
-            if left != right:
-                if left:
-                    that.delete_reason = f"Other file has a track number {this.path}"
-                    return this
-                elif right:
-                    this.delete_reason = f"Other file has a track number {that.path}"
-                    return that
-            # Skip, if they are the same
-
-            # Higher bitrate is keepable
-            left = this.bitrate
-            right = that.bitrate
-            PU.info(f"Compare bitrate: {left} || {right}", 1)
-            if left > right:
-                that.delete_reason = f"Other file has a higher bitrate {this.path}"
-                return this
-            elif left < right:
-                this.delete_reason = f"Other file has a higher bitrate {that.path}"
-                return that
-            # Skip, if they are the same
-
-            # Year info is keepable
-            left = this.year and this.year > 0
-            right = that.year and this.year > 0
-            PU.info(f"Compare year info: {left} || {right}", 1)
-            if left != right:
-                if left:
-                    that.delete_reason = f"Other file has a year info {this.path}"
-                    return this
-                elif right:
-                    this.delete_reason = f"Other file has a year info {that.path}"
-                    return that
-            # Skip, if they are the same
-
-            # If the filename is closer to the track title, it is keepable
-            left = FileUtil.fuzzy_match_track(this.path, this)
-            right = FileUtil.fuzzy_match_track(that.path, that)
-            PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
-            if left != right:
-                if left > right:
-                    that.delete_reason = f"Other file has a closer filename to the track title {this.path}"
-                    return this
-                elif right:
-                    this.delete_reason = f"Other file has a closer filename to the track title {that.path}"
-                    return that
-            # Skip, if they are the same
-
-            # If the album folder is closer to the album name, it is keepable
-            left = FileUtil.fuzzy_match_album(FileUtil.get_album_folder(this.path), this)
-            right = FileUtil.fuzzy_match_album(FileUtil.get_album_folder(this.path), that)
-            PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
-            if left != right:
-                if left > right:
-                    that.delete_reason = f"Other album folder is closer to the album name  {this.path}"
-                    return this
-                elif right:
-                    this.delete_reason = f"Other album folder is closer to the album name  {that.path}"
-                    return that
-            # Skip, if they are the same
-
-            # If no conditition matches, it doesn't matter which one we take
-            PU.warning(f"No condition matched, keeping this one ({this.path}), instead of that one ({that.path})")
-            this.delete_reason = f"No reason, no condition matched {that.path}"
-            return that
-
         # Keepable if there is only one duplicate
         if len(dups) == 1:
             # Mark related album as having a keepable duplicate
@@ -423,7 +257,7 @@ class DuplicateProcessor:
             # Get the last item of the dups list:
             this = dups[-1]
             that = dups[-2]
-            keepable = is_keepable(this, that)
+            keepable = DuplicateProcessor.is_keepable(this, that)
             removed: MediaFile = None
 
             child_dups: list[MediaFile] = dups[:-2]
@@ -638,6 +472,175 @@ class DuplicateProcessor:
             return f"{round(duration / 60, 2)} minutes"
         else:
             return f"{duration} seconds"
+
+    @staticmethod
+    def is_keepable(this: MediaFile, that: MediaFile) -> MediaFile:
+        """
+        Compare two MediaFile objects and determine which one to keep.
+
+        The logic to determine which file to keep is as follows, and in that order:
+
+        1. Media file is in an album, which already contains another media file which is keepable.
+        1. Media files have equal filenames, but one has a numeric suffix, e.g., "song.mp3" and "song1.mp3".
+           The one with the numeric suffix is considered less important and will be removed.
+        1. Media file title and filename are compared with fuzzy search. Higher ratio is a keeper.
+        1. Media file has one of the preferred file extensions
+        1. Media file has a MusicBrainz recording ID.
+        1. Media file has an artist record available in the Navidrome database.
+        1. Media file has an album record available in the Navidrome database.
+        1. Media file contains a album track number.
+        1. Media file has a better bit rate than any of the other duplicate media files.
+        1. Media file holds a release year.
+
+        """
+        PU.note(f"Compare {this.path} <=> {that.path}", 0)
+
+        # If the files album already contains a keepable, we wanna keep all the items
+        left = this.album and this.album.has_keepable
+        right = that.album and that.album.has_keepable
+        PU.info(f"Compare if album contain a keepable: {left} || {right}", 1)
+        if left != right:
+            if left:
+                that.delete_reason = f"Other album already contains a keepable {this.path}"
+                return this
+            elif right:
+                this.delete_reason = f"Other album already contains a keepable {that.path}"
+                return that
+        # Skip, if they are the same
+
+        # If file paths are equal, except one contains a numeric suffix, keep the other
+        left = FileUtil.equal_file_with_numeric_suffix(this.path, that.path)
+        right = FileUtil.equal_file_with_numeric_suffix(that.path, this.path)
+        PU.info(f"Compare paths with numeric suffix: {right} || {left}", 1)
+        if left or right:
+            if left:
+                that.delete_reason = f"File has a numeric suffix (seems to be a copy) {this.path}"
+                return this
+            elif right:
+                this.delete_reason = f"File has a numeric suffix (seems to be a copy) {that.path}"
+                return that
+        # Skip, if none is a suffixed path
+
+        # Having a preferred file extension is keepable
+        left = this.path.split(".")[-1].lower() in ToolboxConfig.pref_extensions
+        right = that.path.split(".")[-1].lower() in ToolboxConfig.pref_extensions
+        PU.info(f"Compare if file extension is keepable: {left} || {right}", 1)
+        if left != right:
+            if left:
+                that.delete_reason = f"Other file has a preferred extension {this.path}"
+                return this
+            elif right:
+                this.delete_reason = f"Other file has a preferred extension {that.path}"
+                return that
+        # Skip, if they are the same
+
+        # Having a MusicBrainz recording ID is keepable
+        left = this.mbz_recording_id is not None
+        right = that.mbz_recording_id is not None
+        PU.info(f"Compare MusicBrainz recording ID: {left} || {right}", 1)
+        if left != right:
+            if left:
+                that.delete_reason = f"Other file has a MusicBrainz recording ID {this.path}"
+                return this
+            elif right:
+                this.delete_reason = f"Other file has a MusicBrainz recording ID {that.path}"
+                return that
+        # Skip, if they are the same
+
+        # Having artist record in Navidrome is keepable
+        left = this.artist is not None
+        right = that.artist is not None
+        PU.info(f"Artist record available: {left} || {right}", 1)
+        if left != right:
+            if left:
+                that.delete_reason = f"Other file has an artist record in Navidrome {this.path}"
+                return this
+            elif right:
+                this.delete_reason = f"Other file has an artist record in Navidrome {that.path}"
+                return that
+        # Skip, if they are the same
+
+        # Having MusicBrainz album ID in Navidrome is keepable
+        left = this.album.mbz_album_id if this.album else None
+        right = that.album.mbz_album_id if that.album else None
+        PU.info(f"MusicBrainz Album ID available: {left} || {right}", 1)
+        if left != right:
+            if left:
+                that.delete_reason = f"Other file has a MusicBrainz album ID {this.path}"
+                return this
+            elif right:
+                this.delete_reason = f"Other file has MusicBrainz album ID  {that.path}"
+                return that
+        # Skip, if they are the same
+
+        # Having track numbers is keepable
+        left = this.track_number > 0
+        right = that.track_number > 0
+        PU.info(f"Compare track numbers: {left} || {right}", 1)
+        if left != right:
+            if left:
+                that.delete_reason = f"Other file has a track number {this.path}"
+                return this
+            elif right:
+                this.delete_reason = f"Other file has a track number {that.path}"
+                return that
+        # Skip, if they are the same
+
+        # Higher bitrate is keepable
+        left = this.bitrate
+        right = that.bitrate
+        PU.info(f"Compare bitrate: {left} || {right}", 1)
+        if left > right:
+            that.delete_reason = f"Other file has a higher bitrate {this.path}"
+            return this
+        elif left < right:
+            this.delete_reason = f"Other file has a higher bitrate {that.path}"
+            return that
+        # Skip, if they are the same
+
+        # Year info is keepable
+        left = this.year and this.year > 0
+        right = that.year and this.year > 0
+        PU.info(f"Compare year info: {left} || {right}", 1)
+        if left != right:
+            if left:
+                that.delete_reason = f"Other file has a year info {this.path}"
+                return this
+            elif right:
+                this.delete_reason = f"Other file has a year info {that.path}"
+                return that
+        # Skip, if they are the same
+
+        # If the filename is closer to the track title, it is keepable
+        left = FileUtil.fuzzy_match_track(this.path, this)
+        right = FileUtil.fuzzy_match_track(that.path, that)
+        PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
+        if left != right:
+            if left > right:
+                that.delete_reason = f"Other file has a closer filename to the track title {this.path}"
+                return this
+            elif right:
+                this.delete_reason = f"Other file has a closer filename to the track title {that.path}"
+                return that
+        # Skip, if they are the same
+
+        # If the album folder is closer to the album name, it is keepable
+        left = FileUtil.fuzzy_match_album(FileUtil.get_album_folder(this.path), this)
+        right = FileUtil.fuzzy_match_album(FileUtil.get_album_folder(this.path), that)
+        PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
+        if left != right:
+            if left > right:
+                that.delete_reason = f"Other album folder is closer to the album name  {this.path}"
+                return this
+            elif right:
+                this.delete_reason = f"Other album folder is closer to the album name  {that.path}"
+                return that
+        # Skip, if they are the same
+
+        # If no conditition matches, it doesn't matter which one we take
+        PU.warning(f"No condition matched, keeping this one ({this.path}), instead of that one ({that.path})")
+        this.delete_reason = f"No reason, no condition matched {that.path}"
+        return that
 
 
 if __name__ == "__main__":
