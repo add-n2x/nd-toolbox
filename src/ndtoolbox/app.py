@@ -493,7 +493,7 @@ class DuplicateProcessor:
         1. Media file holds a release year.
 
         """
-        PU.note(f"Compare {this.path} <=> {that.path}", 0)
+        PU.note(f"Compare {SU.gray(this.path)} <=> {SU.gray(that.path)}", 0)
 
         # If the files album already contains a keepable, we wanna keep all the items
         left = this.album and this.album.has_keepable
@@ -501,10 +501,10 @@ class DuplicateProcessor:
         PU.info(f"Compare if album contain a keepable: {left} || {right}", 1)
         if left != right:
             if left:
-                that.delete_reason = f"Other album already contains a keepable {this.path}"
+                that.delete_reason = f"Other album already contains a keepable | {SU.gray(this.path)}"
                 return this
             elif right:
-                this.delete_reason = f"Other album already contains a keepable {that.path}"
+                this.delete_reason = f"Other album already contains a keepable | {SU.gray(that.path)}"
                 return that
         # Skip, if they are the same
 
@@ -514,10 +514,10 @@ class DuplicateProcessor:
         PU.info(f"Compare paths with numeric suffix: {right} || {left}", 1)
         if left or right:
             if left:
-                that.delete_reason = f"File has a numeric suffix (seems to be a copy) {this.path}"
+                that.delete_reason = f"File has a numeric suffix (seems to be a copy) | {SU.gray(this.path)}"
                 return this
             elif right:
-                this.delete_reason = f"File has a numeric suffix (seems to be a copy) {that.path}"
+                this.delete_reason = f"File has a numeric suffix (seems to be a copy) | {SU.gray(that.path)}"
                 return that
         # Skip, if none is a suffixed path
 
@@ -527,10 +527,10 @@ class DuplicateProcessor:
         PU.info(f"Compare if file extension is keepable: {left} || {right}", 1)
         if left != right:
             if left:
-                that.delete_reason = f"Other file has a preferred extension {this.path}"
+                that.delete_reason = f"Other file has a preferred extension | {SU.gray(this.path)}"
                 return this
             elif right:
-                this.delete_reason = f"Other file has a preferred extension {that.path}"
+                this.delete_reason = f"Other file has a preferred extension | {SU.gray(that.path)}"
                 return that
         # Skip, if they are the same
 
@@ -540,10 +540,10 @@ class DuplicateProcessor:
         PU.info(f"Compare MusicBrainz recording ID: {left} || {right}", 1)
         if left != right:
             if left:
-                that.delete_reason = f"Other file has a MusicBrainz recording ID {this.path}"
+                that.delete_reason = f"Other file has a MusicBrainz recording ID | {SU.gray(this.path)}"
                 return this
             elif right:
-                this.delete_reason = f"Other file has a MusicBrainz recording ID {that.path}"
+                this.delete_reason = f"Other file has a MusicBrainz recording ID | {SU.gray(that.path)}"
                 return that
         # Skip, if they are the same
 
@@ -553,10 +553,10 @@ class DuplicateProcessor:
         PU.info(f"Artist record available: {left} || {right}", 1)
         if left != right:
             if left:
-                that.delete_reason = f"Other file has an artist record in Navidrome {this.path}"
+                that.delete_reason = f"Other file has an artist record in Navidrome | {SU.gray(this.path)}"
                 return this
             elif right:
-                this.delete_reason = f"Other file has an artist record in Navidrome {that.path}"
+                this.delete_reason = f"Other file has an artist record in Navidrome | {SU.gray(that.path)}"
                 return that
         # Skip, if they are the same
 
@@ -566,10 +566,10 @@ class DuplicateProcessor:
         PU.info(f"MusicBrainz Album ID available: {left} || {right}", 1)
         if left != right:
             if left:
-                that.delete_reason = f"Other file has a MusicBrainz album ID {this.path}"
+                that.delete_reason = f"Other file has a MusicBrainz album ID | {SU.gray(this.path)}"
                 return this
             elif right:
-                this.delete_reason = f"Other file has MusicBrainz album ID  {that.path}"
+                this.delete_reason = f"Other file has MusicBrainz album ID  | {SU.gray(that.path)}"
                 return that
         # Skip, if they are the same
 
@@ -579,10 +579,10 @@ class DuplicateProcessor:
         PU.info(f"Compare track numbers: {left} || {right}", 1)
         if left != right:
             if left:
-                that.delete_reason = f"Other file has a track number {this.path}"
+                that.delete_reason = f"Other file has a track number | {SU.gray(this.path)}"
                 return this
             elif right:
-                this.delete_reason = f"Other file has a track number {that.path}"
+                this.delete_reason = f"Other file has a track number | {SU.gray(that.path)}"
                 return that
         # Skip, if they are the same
 
@@ -591,10 +591,10 @@ class DuplicateProcessor:
         right = that.bitrate
         PU.info(f"Compare bitrate: {left} || {right}", 1)
         if left > right:
-            that.delete_reason = f"Other file has a higher bitrate {this.path}"
+            that.delete_reason = f"Other file has a higher bitrate | {SU.gray(this.path)}"
             return this
         elif left < right:
-            this.delete_reason = f"Other file has a higher bitrate {that.path}"
+            this.delete_reason = f"Other file has a higher bitrate | {SU.gray(that.path)}"
             return that
         # Skip, if they are the same
 
@@ -604,10 +604,10 @@ class DuplicateProcessor:
         PU.info(f"Compare year info: {left} || {right}", 1)
         if left != right:
             if left:
-                that.delete_reason = f"Other file has a year info {this.path}"
+                that.delete_reason = f"Other file has a year info | {SU.gray(this.path)}"
                 return this
             elif right:
-                this.delete_reason = f"Other file has a year info {that.path}"
+                this.delete_reason = f"Other file has a year info | {SU.gray(that.path)}"
                 return that
         # Skip, if they are the same
 
@@ -617,10 +617,10 @@ class DuplicateProcessor:
         PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
         if left != right:
             if left > right:
-                that.delete_reason = f"Other file has a closer filename to the track title {this.path}"
+                that.delete_reason = f"Other file has a closer filename to the track title | {SU.gray(this.path)}"
                 return this
             elif right:
-                this.delete_reason = f"Other file has a closer filename to the track title {that.path}"
+                this.delete_reason = f"Other file has a closer filename to the track title | {SU.gray(that.path)}"
                 return that
         # Skip, if they are the same
 
@@ -630,16 +630,16 @@ class DuplicateProcessor:
         PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
         if left != right:
             if left > right:
-                that.delete_reason = f"Other album folder is closer to the album name  {this.path}"
+                that.delete_reason = f"Other album folder is closer to the album name  | {SU.gray(this.path)}"
                 return this
             elif right:
-                this.delete_reason = f"Other album folder is closer to the album name  {that.path}"
+                this.delete_reason = f"Other album folder is closer to the album name  | {SU.gray(that.path)}"
                 return that
         # Skip, if they are the same
 
         # If no conditition matches, it doesn't matter which one we take
         PU.warning(f"No condition matched, keeping this one ({this.path}), instead of that one ({that.path})")
-        this.delete_reason = f"No reason, no condition matched {that.path}"
+        this.delete_reason = f"No reason, no condition matched | {SU.gray(that.path)}"
         return that
 
 
