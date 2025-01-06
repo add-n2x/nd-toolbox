@@ -329,16 +329,16 @@ class DuplicateProcessor:
                     return that
             # Skip, if they are the same
 
-            # Having album record in Navidrome is keepable
-            left = this.album is not None
-            right = that.album is not None
-            PU.info(f"Album record available: {left} || {right}", 1)
+            # Having MusicBrainz album ID in Navidrome is keepable
+            left = this.album.mbz_album_id if this.album else None
+            right = that.album is that.album.mbz_album_id if this.album else None
+            PU.info(f"MusicBrainz Album ID available: {left} || {right}", 1)
             if left != right:
                 if left:
-                    that.delete_reason = f"Other file has an album record in Navidrome {this.path}"
+                    that.delete_reason = f"Other file has a MusicBrainz album ID {this.path}"
                     return this
                 elif right:
-                    this.delete_reason = f"Other file has an album record in Navidrome  {that.path}"
+                    this.delete_reason = f"Other file has MusicBrainz album ID  {that.path}"
                     return that
             # Skip, if they are the same
 
