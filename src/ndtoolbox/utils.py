@@ -36,10 +36,10 @@ class FileUtil:
     def fuzzy_match(path: str, media) -> bool:
         """Check if path and media file artist and title are similar using fuzzy matching."""
         _, file = os.path.split(path)
-        file = Path(file).stem
-        title = str(media.title)
-        album = str(media.album_name)
-        artist = str(media.artist_name)
+        file = Path(file).stem.lower()
+        title = str(media.title).lower()
+        album = str(media.album_name).lower()
+        artist = str(media.artist_name).lower()
         r1 = fuzz.ratio(file, title)
         r2 = fuzz.ratio(file, artist + " - " + title)
         r3 = fuzz.ratio(file, artist + " - " + album + " - " + title)
@@ -102,7 +102,7 @@ class CLI:
         return True
 
 
-class TerminalColors(Enum):
+class StringUtil:
     """
     Colors for formatting terminal output.
     """
@@ -120,6 +120,51 @@ class TerminalColors(Enum):
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
     STRIKE = "\u0336"
+
+    @staticmethod
+    def header(text: str) -> str:
+        """Format text as a header."""
+        return f"{StringUtil.HEADER}{text}{StringUtil.RESET}"
+
+    @staticmethod
+    def bold(text: str) -> str:
+        """Format text as bold."""
+        return f"{StringUtil.BOLD}{text}{StringUtil.RESET}"
+
+    @staticmethod
+    def underline(text: str) -> str:
+        """Format text with an underline."""
+        return f"{StringUtil.UNDERLINE}{text}{StringUtil.RESET}"
+
+    @staticmethod
+    def strike(text: str) -> str:
+        """Format text with a strikethrough."""
+        return f"{StringUtil.STRIKE}{text}{StringUtil.RESET}"
+
+    @staticmethod
+    def red(text: str) -> str:
+        """Format text as red."""
+        return f"{StringUtil.RED}{text}{StringUtil.RESET}"
+
+    @staticmethod
+    def green(text: str) -> str:
+        """Format text as green."""
+        return f"{StringUtil.GREEN}{text}{StringUtil.RESET}"
+
+    @staticmethod
+    def orange(text: str) -> str:
+        """Format text as orange."""
+        return f"{StringUtil.ORANGE}{text}{StringUtil.RESET}"
+
+    @staticmethod
+    def blue(text: str) -> str:
+        """Format text as blue."""
+        return f"{StringUtil.BLUE}{text}{StringUtil.RESET}"
+
+    @staticmethod
+    def pink(text: str) -> str:
+        """Format text as pink."""
+        return f"{StringUtil.PINK}{text}{StringUtil.RESET}"
 
 
 class PrintUtils:
@@ -142,7 +187,7 @@ class PrintUtils:
     @staticmethod
     def bold(msg, lvl=0, log=True):
         """Print bold text with indentation based on level."""
-        msg = TerminalColors.BOLD.value + msg + TerminalColors.RESET.value
+        msg = StringUtil.bold(msg)
         print(PrintUtils.indent(msg, lvl))
         if log:
             ToolboxConfig.logger.info(msg)
@@ -150,7 +195,7 @@ class PrintUtils:
     @staticmethod
     def underline(msg, lvl=0, log=True):
         """Print unterlined text with indentation based on level."""
-        msg = TerminalColors.UNDERLINE.value + msg + TerminalColors.RESET.value
+        msg = StringUtil.underline(msg)
         print(PrintUtils.indent(msg, lvl))
         if log:
             ToolboxConfig.logger.info(msg)
@@ -165,28 +210,28 @@ class PrintUtils:
     @staticmethod
     def error(msg, lvl=0):
         """Print red text with indentation based on level."""
-        msg = TerminalColors.RED.value + msg + TerminalColors.RESET.value
+        msg = StringUtil.red(msg)
         print(PrintUtils.indent(msg, lvl))
         ToolboxConfig.logger.error(msg)
 
     @staticmethod
     def success(msg, lvl=0):
         """Print green text with indentation based on level."""
-        msg = TerminalColors.GREEN.value + msg + TerminalColors.RESET.value
+        msg = StringUtil.green(msg)
         print(PrintUtils.indent(msg, lvl))
         ToolboxConfig.logger.info(msg)
 
     @staticmethod
     def warning(msg, lvl=0):
         """Print orange text with indentation based on level."""
-        msg = TerminalColors.ORANGE.value + msg + TerminalColors.RESET.value
+        msg = StringUtil.orange(msg)
         print(PrintUtils.indent(msg, lvl))
         ToolboxConfig.logger.warning(msg)
 
     @staticmethod
     def note(msg, lvl=0):
         """Print note text with indentation based on level."""
-        msg = TerminalColors.BLUE.value + msg + TerminalColors.RESET.value
+        msg = StringUtil.blue(msg)
         print(PrintUtils.indent(msg, lvl))
         ToolboxConfig.logger.info(msg)
 
