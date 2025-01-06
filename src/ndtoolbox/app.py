@@ -16,6 +16,7 @@ from ndtoolbox.db import NavidromeDb
 from ndtoolbox.model import Annotation, MediaFile
 from ndtoolbox.utils import CLI, FileTools, FileUtil, ToolboxConfig
 from ndtoolbox.utils import PrintUtils as PU
+from ndtoolbox.utils import StringUtil as SU
 
 
 class DuplicateProcessor:
@@ -136,10 +137,12 @@ class DuplicateProcessor:
         for folder, dups in dup_folders.items():
             PU.info(f"\n{FileUtil.get_folder(dups[0].path)} [Album: {dups[0].album_name}]")
             for dup in dups:
-                if dup.is_deletable:
-                    PU.error(f"- DELETE > {FileUtil.get_file(dup.path)}", 1)
+                file = FileUtil.get_file(dup.path)
+                if dup.is_deletable is True:
+                    msg = SU.red(f"- DELETE > {file} ") + " - Reason: " + SU.pink(f"{dup.delete_reason}")
                 else:
-                    PU.success(f"- KEEP   > {FileUtil.get_file(dup.path)}", 1)
+                    msg = SU.green(f"- KEEP   > {file}")
+                PU.info(msg, 1)
 
         PU.ln()
         PU.info(f"Files to keep: {self.stats.media_files_keepable}")
@@ -264,11 +267,13 @@ class DuplicateProcessor:
             # If the files album already contains a keepable, we wanna keep all the items
             left = this.album and this.album.has_keepable
             right = that.album and that.album.has_keepable
-            PU.info(f"Compare if albums contain a keepable: {left} || {right}", 1)
+            PU.info(f"Compare if album contain a keepable: {left} || {right}", 1)
             if left != right:
                 if left:
+                    that.delete_reason = f"Other album already contains a keepable {this.path}"
                     return this
                 elif right:
+                    this.delete_reason = f"Other album already contains a keepable {that.path}"
                     return that
             # Skip, if they are the same
 
@@ -278,21 +283,12 @@ class DuplicateProcessor:
             PU.info(f"Compare paths with numeric suffix: {right} || {left}", 1)
             if left or right:
                 if left:
+                    that.delete_reason = f"File has a numeric suffix (seems to be a copy) {this.path}"
                     return this
                 elif right:
+                    this.delete_reason = f"File has a numeric suffix (seems to be a copy) {that.path}"
                     return that
             # Skip, if none is a suffixed path
-
-            # If the filename is closer to the track title, it is keepable
-            left = FileUtil.fuzzy_match(this.path, this)
-            right = FileUtil.fuzzy_match(that.path, that)
-            PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
-            if left != right:
-                if left > right:
-                    return this
-                elif right:
-                    return that
-            # Skip, if they are the same
 
             # Having a preferred file extension is keepable
             left = this.path.split(".")[-1].lower() in ToolboxConfig.pref_extensions
@@ -300,8 +296,10 @@ class DuplicateProcessor:
             PU.info(f"Compare if file extension is keepable: {left} || {right}", 1)
             if left != right:
                 if left:
+                    that.delete_reason = f"Other file has a preferred extension {this.path}"
                     return this
                 elif right:
+                    this.delete_reason = f"Other file has a preferred extension {that.path}"
                     return that
             # Skip, if they are the same
 
@@ -311,8 +309,10 @@ class DuplicateProcessor:
             PU.info(f"Compare MusicBrainz recording ID: {left} || {right}", 1)
             if left != right:
                 if left:
+                    that.delete_reason = f"Other file has a MusicBrainz recording ID {this.path}"
                     return this
                 elif right:
+                    this.delete_reason = f"Other file has a MusicBrainz recording ID {that.path}"
                     return that
             # Skip, if they are the same
 
@@ -322,8 +322,10 @@ class DuplicateProcessor:
             PU.info(f"Artist record available: {left} || {right}", 1)
             if left != right:
                 if left:
+                    that.delete_reason = f"Other file has an artist record in Navidrome {this.path}"
                     return this
                 elif right:
+                    this.delete_reason = f"Other file has an artist record in Navidrome {that.path}"
                     return that
             # Skip, if they are the same
 
@@ -333,8 +335,10 @@ class DuplicateProcessor:
             PU.info(f"Album record available: {left} || {right}", 1)
             if left != right:
                 if left:
+                    that.delete_reason = f"Other file has an album record in Navidrome {this.path}"
                     return this
                 elif right:
+                    this.delete_reason = f"Other file has an album record in Navidrome  {that.path}"
                     return that
             # Skip, if they are the same
 
@@ -344,8 +348,10 @@ class DuplicateProcessor:
             PU.info(f"Compare track numbers: {left} || {right}", 1)
             if left != right:
                 if left:
+                    that.delete_reason = f"Other file has a track number {this.path}"
                     return this
                 elif right:
+                    this.delete_reason = f"Other file has a track number {that.path}"
                     return that
             # Skip, if they are the same
 
@@ -354,8 +360,10 @@ class DuplicateProcessor:
             right = that.bitrate
             PU.info(f"Compare bitrate: {left} || {right}", 1)
             if left > right:
+                that.delete_reason = f"Other file has a higher bitrate {this.path}"
                 return this
             elif left < right:
+                this.delete_reason = f"Other file has a higher bitrate {that.path}"
                 return that
             # Skip, if they are the same
 
@@ -365,13 +373,29 @@ class DuplicateProcessor:
             PU.info(f"Compare year info: {left} || {right}", 1)
             if left != right:
                 if left:
+                    that.delete_reason = f"Other file has a year info {this.path}"
                     return this
                 elif right:
+                    this.delete_reason = f"Other file has a year info {that.path}"
+                    return that
+            # Skip, if they are the same
+
+            # If the filename is closer to the track title, it is keepable
+            left = FileUtil.fuzzy_match(this.path, this)
+            right = FileUtil.fuzzy_match(that.path, that)
+            PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
+            if left != right:
+                if left > right:
+                    that.delete_reason = f"Other file has a closer filename to the track title {this.path}"
+                    return this
+                elif right:
+                    this.delete_reason = f"Other file has a closer filename to the track title {that.path}"
                     return that
             # Skip, if they are the same
 
             # If no conditition matches, it doesn't matter which one we take
-            PU.warning(f"No condition matched, keeping the first one ({this.path})")
+            PU.warning(f"No condition matched, keeping this one ({this.path}), instead of that one ({that.path})")
+            this.delete_reason = f"No reason, no condition matched {that.path}"
             return that
 
         # Keepable if there is only one duplicate
