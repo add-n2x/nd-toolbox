@@ -33,7 +33,7 @@ class FileUtil:
         return False
 
     @staticmethod
-    def fuzzy_match(path: str, media) -> bool:
+    def fuzzy_match_track(path: str, media) -> bool:
         """Check if path and media file artist and title are similar using fuzzy matching."""
         _, file = os.path.split(path)
         file = Path(file).stem.lower()
@@ -47,10 +47,28 @@ class FileUtil:
         return max(r1, r2, r3)
 
     @staticmethod
+    def fuzzy_match_album(path: str, media) -> bool:
+        """Check if path and media file album are similar using fuzzy matching."""
+        _, file = os.path.split(path)
+        file = Path(file).stem.lower()
+        album = str(media.album_name).lower()
+        artist = str(media.artist_name).lower()
+        r1 = fuzz.ratio(file, album)
+        r2 = fuzz.ratio(file, artist + " - " + album)
+        # print(f"Got ratios for '{media.title}': {r1}, {r2}, {r3}")
+        return max(r1, r2)
+
+    @staticmethod
     def get_folder(path: str) -> str:
         """Get folder from file path."""
         folders, _ = os.path.split(path)
         return folders
+
+    @staticmethod
+    def get_album_folder(path: str) -> str:
+        """Get album folder from file path."""
+        folder = FileUtil.get_folder(path)
+        return folder.split(os.sep)[-1]
 
     @staticmethod
     def get_file(path: str) -> str:

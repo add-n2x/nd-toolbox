@@ -381,8 +381,8 @@ class DuplicateProcessor:
             # Skip, if they are the same
 
             # If the filename is closer to the track title, it is keepable
-            left = FileUtil.fuzzy_match(this.path, this)
-            right = FileUtil.fuzzy_match(that.path, that)
+            left = FileUtil.fuzzy_match_track(this.path, this)
+            right = FileUtil.fuzzy_match_track(that.path, that)
             PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
             if left != right:
                 if left > right:
@@ -390,6 +390,19 @@ class DuplicateProcessor:
                     return this
                 elif right:
                     this.delete_reason = f"Other file has a closer filename to the track title {that.path}"
+                    return that
+            # Skip, if they are the same
+
+            # If the album folder is closer to the album name, it is keepable
+            left = FileUtil.fuzzy_match_album(FileUtil.get_album_folder(this.path), this)
+            right = FileUtil.fuzzy_match_album(FileUtil.get_album_folder(this.path), that)
+            PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
+            if left != right:
+                if left > right:
+                    that.delete_reason = f"Other album folder is closer to the album name  {this.path}"
+                    return this
+                elif right:
+                    this.delete_reason = f"Other album folder is closer to the album name  {that.path}"
                     return that
             # Skip, if they are the same
 
