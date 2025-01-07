@@ -2,7 +2,7 @@
 
 import pytest
 
-from ndtoolbox.db import Annotation, NavidromeDb
+from ndtoolbox.db import Annotation, NavidromeDb, NavidromeDbConnection
 from ndtoolbox.model import MediaFile
 from ndtoolbox.utils import ToolboxConfig
 
@@ -59,10 +59,11 @@ def test_get_media(db, mocker):
     db.get_media_annotation.return_value = test_anno
 
     # Retrieve the media file from the database
-    media_file = db.get_media(test_media_file.path)
+    with NavidromeDbConnection() as conn:
+        media_file = db.get_media(test_media_file.path, conn)
 
-    print(f"Media file: {media_file}")
-    print(f"File annotation: {media_file.annotation}")
+        print(f"Media file: {media_file}")
+        print(f"File annotation: {media_file.annotation}")
 
     # Verify that the media file is correctly retrieved and its attributes match the expected values
     assert media_file is not None
@@ -83,17 +84,20 @@ def test_get_media(db, mocker):
     assert anno.starred_at is test_anno.starred_at
 
 
-def test_get_invalid_annotation(db):
+def test_get_invalid_annotation(db: NavidromeDb):
     """Test retrieving an invalid annotation."""
     # Attempt to retrieve an annotation that does not exist
-    invalid_anno = db.get_annotation(1000, Annotation.Type.album)
-    assert invalid_anno is None
+    with NavidromeDbConnection() as conn:
+        invalid_anno = db.get_annotation(1000, Annotation.Type.album, conn)
+        assert invalid_anno is None
 
 
 def test_store_annotation(db: NavidromeDb):
     """Test storing an annotation."""
     # Delete any existing annotations with item_id 999
-    db.delete_annotation("999", Annotation.Type.album)
+    with NavidromeDbConnection() as conn:
+        db.delete_annotation("999", Annotation.Type.album, conn)
+        conn.commit()
 
     # Create a new annotation object
     new_anno = Annotation(
@@ -105,15 +109,18 @@ def test_store_annotation(db: NavidromeDb):
         starred=True,
         starred_at="2013-04-18 00:13:37",
     )
-    # Store the annotation in the database
-    db.store_annotation(new_anno)
-    # Retrieve the stored annotation to verify it was saved correctly
-    stored_anno = db.get_annotation("999", Annotation.Type.album)
 
-    assert stored_anno is not None
-    assert stored_anno.item_id == new_anno.item_id
-    assert stored_anno.item_type == new_anno.item_type
-    assert stored_anno.play_count == new_anno.play_count
-    assert stored_anno.rating == new_anno.rating
-    assert stored_anno.starred == new_anno.starred
-    assert stored_anno.starred_at is not None
+    with NavidromeDbConnection() as conn:
+        # Store the annotation in the database
+        db.store_annotation(new_anno, conn)
+        conn.commit()
+        # Retrieve the stored annotation to verify it was saved correctly
+        stored_anno = db.get_annotation("999", Annotation.Type.album, conn)
+
+        assert stored_anno is not None
+        assert stored_anno.item_id == new_anno.item_id
+        assert stored_anno.item_type == new_anno.item_type
+        assert stored_anno.play_count == new_anno.play_count
+        assert stored_anno.rating == new_anno.rating
+        assert stored_anno.starred == new_anno.starred
+        assert stored_anno.starred_at is not None
