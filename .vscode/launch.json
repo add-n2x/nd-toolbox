@@ -1,0 +1,26 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug: load-duplicates",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "src.ndtoolbox.app",
+            "args": [
+                "poetry",
+                "run",
+                "python",
+                "src/ndtoolbox/app/main",
+                "action=load-duplicates"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${cwd}:${cwd}/src:${env:PYTHONPATH}"
+            }
+        }
+    ]
+}
