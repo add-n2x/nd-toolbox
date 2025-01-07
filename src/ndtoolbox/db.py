@@ -152,7 +152,7 @@ class NavidromeDb:
             FROM media_file
             WHERE path LIKE ?
         """
-        # with NavidromeDbConnection() as conn:
+
         cursor = conn.cursor()
         cursor.execute(query, (file_path,))
         result = cursor.fetchone()
@@ -193,7 +193,6 @@ class NavidromeDb:
             WHERE id LIKE ?
         """
 
-        # with NavidromeDbConnection() as conn:
         cursor = conn.cursor()
         cursor.execute(query, (artist_id,))
         result = cursor.fetchone()
@@ -230,7 +229,6 @@ class NavidromeDb:
             FROM album
             WHERE id LIKE ?
         """
-        # with NavidromeDbConnection() as conn:
         cursor = conn.cursor()
         cursor.execute(query, (album_id,))
         result = cursor.fetchone()
@@ -286,8 +284,6 @@ class NavidromeDb:
             FROM annotation
             WHERE user_id LIKE ? and item_id LIKE ? and item_type LIKE ?
         """
-
-        # with NavidromeDbConnection() as conn:
         cursor = conn.cursor()
         cursor.execute(query, (self.user_id, str(item_id), str(type.name)))
         result = cursor.fetchone()
@@ -331,14 +327,11 @@ class NavidromeDb:
             annotation.starred,
             starred_at,
         )
-
-        # with NavidromeDbConnection() as conn:
         cur = conn.cursor()
         cur.execute(
             query,
             args,
         )
-        # conn.commit()
 
     def delete_annotation(self, item_id: int, item_type: Annotation.Type, conn: NavidromeDbConnection):
         """
@@ -349,10 +342,8 @@ class NavidromeDb:
             item_type (Annotation.Type): The type of the item associated with the annotation.
             conn (NavidromeDbConnection): The database connection to use.
         """
-        # with NavidromeDbConnection() as conn:
         cur = conn.cursor()
         cur.execute(
             "DELETE FROM annotation WHERE item_id=? AND item_type=? AND user_id=?",
             (item_id, item_type.name, self.user_id),
         )
-        # conn.commit()
