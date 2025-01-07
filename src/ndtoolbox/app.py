@@ -12,7 +12,7 @@ import jsonpickle
 import tomli
 from easydict import EasyDict
 
-from ndtoolbox.db import NavidromeDb
+from ndtoolbox.db import NavidromeDb, NavidromeDbConnection
 from ndtoolbox.model import Annotation, MediaFile
 from ndtoolbox.utils import CLI, FileTools, FileUtil, ToolboxConfig
 from ndtoolbox.utils import PrintUtils as PU
@@ -305,26 +305,27 @@ class DuplicateProcessor:
                 are lists of file paths.
         """
         PU.info("Loading data from Navidrome database ", end="")
-        for key in dups_input.keys():
-            PU.info(f"[*] Processing duplicate {key}")
-            files = dups_input.get(key)
-            self.stats.duplicate_records += 1
+        with NavidromeDbConnection() as conn:
+            for key in dups_input.keys():
+                PU.info(f"[*] Processing duplicate {key}")
+                files = dups_input.get(key)
+                self.stats.duplicate_records += 1
 
-            # Initialize the list for this key if it doesn't exist.
-            if not self.dups_media_files.get(key):
-                self.dups_media_files[key] = []
+                # Initialize the list for this key if it doesn't exist.
+                if not self.dups_media_files.get(key):
+                    self.dups_media_files[key] = []
 
-            for file in files:
-                self.stats.duplicate_files += 1
-                # Normalize Unicode characters in the file path. Otherwise characters like `á` (`\u0061\u0301`)
-                # and `á` (`\u00e1`) are not threaded as the same.
-                file = unicodedata.normalize("NFC", file)
+                    for file in files:
+                        self.stats.duplicate_files += 1
+                        # Normalize Unicode characters in the file path. Otherwise characters like `á` (`\u0061\u0301`)
+                        # and `á` (`\u00e1`) are not threaded as the same.
+                        file = unicodedata.normalize("NFC", file)
 
-                PU.log(f"    Query {file}")
-                media: MediaFile = self.db.get_media(file)
-                if media:
-                    self.dups_media_files[key].append(media)
-                self._log_info(file, media)
+                        PU.log(f"    Query {file}")
+                        media: MediaFile = self.db.get_media(file, conn)
+                        if media:
+                            self.dups_media_files[key].append(media)
+                        self._log_info(file, media)
 
         PU.success("> Done.")
 
@@ -405,9 +406,11 @@ class DuplicateProcessor:
         """
         Save all annotations of all media file duplicates to the database.
         """
-        for _, dups in dups_media_files.items():
-            for media in dups:
-                self.db.store_annotation(media.annotation)
+        with NavidromeDbConnection() as conn:
+            for _, dups in dups_media_files.items():
+                for media in dups:
+                    self.db.store_annotation(media.annotation, conn)
+            conn.commit()
 
     def _log_info(self, file_path: str, media: MediaFile):
         """
@@ -673,8 +676,15 @@ if __name__ == "__main__":
         PU.ln()
 
     # Read the action argument from the command line
-    action = sys.argv[1]
-    action = action.split("action=")[1]
+    action = ""
+    for arg in sys.argv:
+        if arg.startswith("action="):
+            action = arg.split("=")[1]
+            break
+    else:
+        PU.error("No action specified. Please use the format 'python app.py action=<action>'.")
+        sys.exit(1)
+
     processor = DuplicateProcessor(config.navidrome_db_path, config.data_dir, config.source_base, config.target_base)
 
     if action == "remove-unsupported":
