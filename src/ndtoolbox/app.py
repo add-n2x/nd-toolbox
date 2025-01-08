@@ -19,6 +19,72 @@ from ndtoolbox.utils import PrintUtils as PU
 from ndtoolbox.utils import StringUtil as SU
 
 
+class Stats:
+    """Statistics class to keep track of various counts."""
+
+    duplicate_records: int
+    duplicate_albums: int
+    duplicate_artists: int
+    duplicate_genres: int
+    duplicate_files: int
+    media_files: int
+    file_annotations: int
+    media_files_keepable: int
+    media_files_deletable: int
+
+    _start: float = 0.0
+    _stop: float = 0.0
+
+    db: NavidromeDb
+
+    def __init__(self, db: NavidromeDb):
+        """Initialize statistics counters."""
+        self.db = db
+        self.duplicate_records = 0
+        self.duplicate_albums = 0
+        self.duplicate_artists = 0
+        self.duplicate_genres = 0
+        self.duplicate_files = 0
+        self.media_files = 0
+        self.file_annotations = 0
+        self.media_files_keepable = 0
+        self.media_files_deletable = 0
+
+    def start(self):
+        """Start the operation."""
+        self._start = datetime.now().timestamp()
+        self._stop = 0.0
+
+    def stop(self):
+        """Stop the operation."""
+        self._stop = datetime.now().timestamp()
+
+    def print_duration(self):
+        """Print the duration of the operation."""
+        """Get the duration of the operation in seconds."""
+        duration = round(self._stop - self._start, 2)
+        if duration > 60:
+            duration = f"{round(duration / 60, 2)} minutes"
+        else:
+            duration = f"{duration} seconds"
+        PU.success(f"Finished in {duration}")
+
+    def print_stats(self):
+        """Print statistics about the processing."""
+        PU.bold("\nSTATS")
+        PU.ln()
+        PU.info("Duplicates:", 0)
+        PU.info(f"Records: {self.duplicate_records}", 1)
+        PU.info(f"Files: {self.duplicate_files}", 1)
+        PU.info(f"Artists: {len(self.db.artists)}", 1)
+        PU.info(f"Albums: {len(self.db.albums)}", 1)
+        PU.info("")
+        PU.info("Media files:", 0)
+        PU.info(f"Found: {self.media_files}", 1)
+        PU.info(f"Annotations: {self.file_annotations}", 1)
+        PU.ln()
+
+
 class DuplicateProcessor:
     """
     This class processes duplicate media files.
@@ -26,7 +92,7 @@ class DuplicateProcessor:
     Attributes:
         db (NavidromeDb): The Navidrome database DAO.
         dups_media_files (dict): A dictionary containing the enhanced duplicate media files with data from Navidrome.
-        stats (EasyDict): A dictionary containing statistics about the processing of duplicate media files.
+        stats (Stats): Contains statistics about the processing of duplicate media files.
         errors (list): A list to store any errors encountered during processing.
         data_folder (str): The path to the data folder where processed files will be saved.
         source_base (str): The base path for source media files in Beets.
@@ -41,14 +107,12 @@ class DuplicateProcessor:
 
     db: NavidromeDb
     dups_media_files: dict
-    stats: EasyDict
+    stats: Stats
     errors: list
 
     data_folder: str
     source_base: str
     target_base: str
-    start: float
-    stop: float
 
     def __init__(self, navidrome_db_path: str, data_folder: str, source_base: str, target_base: str):
         """
@@ -63,12 +127,12 @@ class DuplicateProcessor:
             target_base (str): The actual location in the Navidrome music library.
             dry_run (bool): If True, no actual file operations will be performed.
         """
+        self.errors = []
         self.db = NavidromeDb(navidrome_db_path)
+        self.stats = Stats(self.db)
         self.data_folder = data_folder
         self.source_base = source_base
         self.target_base = target_base
-        self.start = 0.0
-        self.stop = 0.0
 
         # Init file paths.
         self.FILE_BEETS_INPUT_JSON = os.path.join(data_folder, "beets/beets-duplicates.json")
@@ -78,24 +142,11 @@ class DuplicateProcessor:
         # Init media file duplicates dictionary for holding processing data.
         self.dups_media_files = {}
 
-        # Init error and stats objects.
-        self.errors = []
-        self.stats = EasyDict(
-            {
-                "duplicate_records": 0,
-                "duplicate_files": 0,
-                "media_files": 0,
-                "file_annotations": 0,
-                "media_files_keepable": 0,
-                "media_files_deletable": 0,
-            }
-        )
-
     def merge_and_store_annotations(self):
         """
         Merge annotations per duplicate records and store them to the database.
         """
-        self._start()
+        self.stats.start()
         self._load_navidrome_data_file()
         PU.bold("Merging and storing annotations for duplicate records")
         PU.ln()
@@ -106,14 +157,14 @@ class DuplicateProcessor:
                 self.db.store_annotation(media.annotation)
                 n += 1
         PU.success(f"> Successfully updated annotations for {n} media files in the Navidrome database.")
-        self._stop()
-        self._print_duration()
+        self.stats.stop()
+        self.stats.print_duration()
 
     def eval_deletable_duplicates(self):
         """
         Detect deletable duplicate files based on the provided criteria.
         """
-        self._start()
+        self.stats.start()
         self._load_navidrome_data_file()
         PU.bold("Evaluating deletable duplicates based on criteria")
         PU.ln()
@@ -147,8 +198,8 @@ class DuplicateProcessor:
         if self._has_errors():
             PU.error(f"Found {len(self.errors)} errors")
         PU.success(f"Stored deletables and keepers to '{file_path}'")
-        self._stop()
-        self._print_duration()
+        self.stats.stop()
+        self.stats.print_duration()
 
     def delete_duplicates(self):
         """
@@ -162,7 +213,7 @@ class DuplicateProcessor:
 
         The result is stored in a JSON file for fast, further processing.
         """
-        self._start()
+        self.stats.start()
         PU.bold("Loading duplicate records from Navidrome database")
         PU.ln()
 
@@ -191,9 +242,15 @@ class DuplicateProcessor:
         with open(self.FILE_TOOLBOX_DATA_JSON, "w", encoding="utf-8") as file:
             file.write(jsonpickle.encode(data, indent=4, keys=True))
         PU.success(f"Stored Navidrome data to '{self.FILE_TOOLBOX_DATA_JSON}'")
-        self._stop()
-        self._print_stats()
-        self._print_duration()
+        self.stats.stop()
+        self.stats.print_stats()
+        if self._has_errors():
+            PU.error(f"Please review {len(self.errors)} errors in {self.ERROR_REPORT_JSON} ... ")
+            with open(self.ERROR_REPORT_JSON, "w") as f:
+                json.dump(self.errors, f, indent=4)
+        else:
+            PU.success("No errors found.")
+        self.stats.print_duration()
 
     def _load_navidrome_data_file(self):
         """
@@ -438,46 +495,6 @@ class DuplicateProcessor:
         else:
             self.errors.append({"error": "media file not found.", "path": file_path})
             PU.error(f"└───── Media file for '{file_path}' not found in database! Exclude from processing.", 1)
-
-    def _print_stats(self):
-        """Print statistics about the processing."""
-        PU.bold("\nSTATS")
-        PU.ln()
-        PU.info("Duplicates:", 0)
-        PU.info(f"Records: {self.stats.duplicate_records}", 1)
-        PU.info(f"Files: {self.stats.duplicate_files}", 1)
-        PU.info(f"Artists: {len(self.db.artists)}", 1)
-        PU.info(f"Albums: {len(self.db.albums)}", 1)
-        PU.info("")
-        PU.info("Media files:", 0)
-        PU.info(f"Found: {self.stats.media_files}", 1)
-        PU.info(f"Annotations: {self.stats.file_annotations}", 1)
-        PU.ln()
-        if self._has_errors():
-            PU.error(f"Please review {len(self.errors)} errors in {self.ERROR_REPORT_JSON} ... ")
-            with open(self.ERROR_REPORT_JSON, "w") as f:
-                json.dump(self.errors, f, indent=4)
-        else:
-            PU.success("No errors found.")
-
-    def _start(self):
-        """Start the operation."""
-        self.start = datetime.now().timestamp()
-
-    def _stop(self):
-        """Stop the operation."""
-        self.stop = datetime.now().timestamp()
-
-    def _print_duration(self):
-        """Print the duration of the operation."""
-        """Get the duration of the operation in seconds."""
-        duration = round(self.stop - self.start, 2)
-        if duration > 60:
-            duration = f"{round(duration / 60, 2)} minutes"
-        else:
-            duration = f"{duration} seconds"
-
-        PU.success(f"Finished in {duration}")
 
     def _has_errors(self) -> bool:
         """Check if there are any errors in the processing."""
