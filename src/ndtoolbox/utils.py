@@ -8,10 +8,10 @@ import os
 import shutil
 import sys
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 
 import colorlog
+import tomli
 from dotenv import find_dotenv, load_dotenv
 from fuzzywuzzy import fuzz
 
@@ -311,6 +311,10 @@ class ToolboxConfig:
     Configuration class for ND Toolbox.
     """
 
+    FILE_BEETS_INPUT_JSON: str
+    FILE_TOOLBOX_DATA_JSON: str
+    ERROR_REPORT_JSON: str
+
     timezone: str = None
     dry_run: bool = None
     logger: logging.Logger = None
@@ -318,8 +322,8 @@ class ToolboxConfig:
     remove_extensions: list = None
     navidrome_db_path: str = None
     nd_dir: str = None
-    data_dir: str = None
-    music_dir: str = None
+    data_folder: str = None
+    music_folder: str = None
     source_base: str = None
     target_base: str = None
 
@@ -332,17 +336,23 @@ class ToolboxConfig:
         ToolboxConfig.remove_extensions = os.getenv("UNSUPPORTED_EXTENSIONS").split(" ")
         ToolboxConfig.nd_dir = os.getenv("ND_DIR")
         ToolboxConfig.navidrome_db_path = os.path.join(ToolboxConfig.nd_dir, "navidrome.db")
-        ToolboxConfig.data_dir = os.getenv("DATA_DIR")
-        ToolboxConfig.music_dir = os.getenv("MUSIC_DIR")
+        ToolboxConfig.data_folder = os.getenv("DATA_DIR")
+        ToolboxConfig.music_folder = os.getenv("MUSIC_DIR")
         ToolboxConfig.source_base = os.getenv("BEETS_BASE_PATH")
         ToolboxConfig.target_base = os.getenv("ND_BASE_PATH")
+
+        # Init file paths.
+        ToolboxConfig.FILE_BEETS_INPUT_JSON = os.path.join(ToolboxConfig.data_folder, "beets/beets-duplicates.json")
+        ToolboxConfig.FILE_TOOLBOX_DATA_JSON = os.path.join(ToolboxConfig.data_folder, "nd-toolbox-data.json")
+        ToolboxConfig.ERROR_REPORT_JSON = os.path.join(ToolboxConfig.data_folder, "nd-toolbox-error.json")
 
         # Setup logger
         log_level = os.getenv("LOG_LEVEL", "INFO").upper()
         if log_level not in logging._nameToLevel:
             raise ValueError(f"Invalid LOG_LEVEL: {log_level}")
-        log_file = os.path.join(ToolboxConfig.data_dir, "nd-toolbox.log")
+        log_file = os.path.join(ToolboxConfig.data_folder, "nd-toolbox.log")
         ToolboxConfig.logger = colorlog.getLogger("ndtoolbox")
+
         colorlog.basicConfig(
             filename=log_file,
             filemode="w",
@@ -352,10 +362,19 @@ class ToolboxConfig:
         )
         PrintUtils.info(f"Initialized logger with level: {log_level} and log file: {log_file}")
 
+        # Print app version
+        with open("pyproject.toml", mode="rb") as file:
+            data = tomli.load(file)
+            version = data["tool"]["poetry"]["version"]
+            PrintUtils.ln()
+            PrintUtils.bold(f"  NAVIDROME TOOLBOX v{version}")
+            PrintUtils.ln()
+
+        # Print config details
         PrintUtils.bold("Initializing configuration")
         PrintUtils.ln()
         PrintUtils.info(f"Dry-run: {ToolboxConfig.dry_run}")
         PrintUtils.info(f"Navidrome database path: {self.navidrome_db_path}")
-        PrintUtils.info(f"Output folder: {ToolboxConfig.data_dir}")
+        PrintUtils.info(f"Output folder: {ToolboxConfig.data_folder}")
         PrintUtils.info(f"Source base: {ToolboxConfig.source_base}")
         PrintUtils.info(f"Target base: {ToolboxConfig.target_base}")
