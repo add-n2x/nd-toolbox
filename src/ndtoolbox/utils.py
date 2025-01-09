@@ -16,6 +16,70 @@ from dotenv import find_dotenv, load_dotenv
 from fuzzywuzzy import fuzz
 
 
+class Stats:
+    """Statistics class to keep track of various counts."""
+
+    duplicate_records: int
+    duplicate_albums: int
+    duplicate_artists: int
+    duplicate_genres: int
+    duplicate_files: int
+    media_files: int
+    file_annotations: int
+    media_files_keepable: int
+    media_files_deletable: int
+
+    _start: float = 0.0
+    _stop: float = 0.0
+
+    def __init__(self, db):
+        """Initialize statistics counters."""
+        self.db = db
+        self.duplicate_records = 0
+        self.duplicate_albums = 0
+        self.duplicate_artists = 0
+        self.duplicate_genres = 0
+        self.duplicate_files = 0
+        self.media_files = 0
+        self.file_annotations = 0
+        self.media_files_keepable = 0
+        self.media_files_deletable = 0
+
+    def start(self):
+        """Start the operation."""
+        self._start = datetime.now().timestamp()
+        self._stop = 0.0
+
+    def stop(self):
+        """Stop the operation."""
+        self._stop = datetime.now().timestamp()
+
+    def print_duration(self):
+        """Print the duration of the operation."""
+        """Get the duration of the operation in seconds."""
+        duration = round(self._stop - self._start, 2)
+        if duration > 60:
+            duration = f"{round(duration / 60, 2)} minutes"
+        else:
+            duration = f"{duration} seconds"
+        PrintUtils.success(f"Finished in {duration}")
+
+    def print_stats(self):
+        """Print statistics about the processing."""
+        PrintUtils.bold("\nSTATS")
+        PrintUtils.ln()
+        PrintUtils.info("Duplicates:", 0)
+        PrintUtils.info(f"Records: {self.duplicate_records}", 1)
+        PrintUtils.info(f"Files: {self.duplicate_files}", 1)
+        PrintUtils.info(f"Artists: {len(self.db.artists)}", 1)
+        PrintUtils.info(f"Albums: {len(self.db.albums)}", 1)
+        PrintUtils.info("")
+        PrintUtils.info("Media files:", 0)
+        PrintUtils.info(f"Found: {self.media_files}", 1)
+        PrintUtils.info(f"Annotations: {self.file_annotations}", 1)
+        PrintUtils.ln()
+
+
 class FileUtil:
     """Utility class for string operations."""
 
@@ -311,7 +375,7 @@ class ToolboxConfig:
     Configuration class for ND Toolbox.
     """
 
-    FILE_BEETS_INPUT_JSON: str
+    FILE_BEETS_INPrintUtilsT_JSON: str
     FILE_TOOLBOX_DATA_JSON: str
     ERROR_REPORT_JSON: str
 
@@ -342,7 +406,9 @@ class ToolboxConfig:
         ToolboxConfig.target_base = os.getenv("ND_BASE_PATH")
 
         # Init file paths.
-        ToolboxConfig.FILE_BEETS_INPUT_JSON = os.path.join(ToolboxConfig.data_folder, "beets/beets-duplicates.json")
+        ToolboxConfig.FILE_BEETS_INPrintUtilsT_JSON = os.path.join(
+            ToolboxConfig.data_folder, "beets/beets-duplicates.json"
+        )
         ToolboxConfig.FILE_TOOLBOX_DATA_JSON = os.path.join(ToolboxConfig.data_folder, "nd-toolbox-data.json")
         ToolboxConfig.ERROR_REPORT_JSON = os.path.join(ToolboxConfig.data_folder, "nd-toolbox-error.json")
 

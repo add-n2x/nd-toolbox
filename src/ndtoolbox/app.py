@@ -13,75 +13,9 @@ from easydict import EasyDict
 
 from ndtoolbox.db import NavidromeDb, NavidromeDbConnection
 from ndtoolbox.model import Annotation, MediaFile
-from ndtoolbox.utils import CLI, FileTools, FileUtil, ToolboxConfig
+from ndtoolbox.utils import CLI, FileTools, FileUtil, Stats, ToolboxConfig
 from ndtoolbox.utils import PrintUtils as PU
 from ndtoolbox.utils import StringUtil as SU
-
-
-class Stats:
-    """Statistics class to keep track of various counts."""
-
-    duplicate_records: int
-    duplicate_albums: int
-    duplicate_artists: int
-    duplicate_genres: int
-    duplicate_files: int
-    media_files: int
-    file_annotations: int
-    media_files_keepable: int
-    media_files_deletable: int
-
-    _start: float = 0.0
-    _stop: float = 0.0
-
-    db: NavidromeDb
-
-    def __init__(self, db: NavidromeDb):
-        """Initialize statistics counters."""
-        self.db = db
-        self.duplicate_records = 0
-        self.duplicate_albums = 0
-        self.duplicate_artists = 0
-        self.duplicate_genres = 0
-        self.duplicate_files = 0
-        self.media_files = 0
-        self.file_annotations = 0
-        self.media_files_keepable = 0
-        self.media_files_deletable = 0
-
-    def start(self):
-        """Start the operation."""
-        self._start = datetime.now().timestamp()
-        self._stop = 0.0
-
-    def stop(self):
-        """Stop the operation."""
-        self._stop = datetime.now().timestamp()
-
-    def print_duration(self):
-        """Print the duration of the operation."""
-        """Get the duration of the operation in seconds."""
-        duration = round(self._stop - self._start, 2)
-        if duration > 60:
-            duration = f"{round(duration / 60, 2)} minutes"
-        else:
-            duration = f"{duration} seconds"
-        PU.success(f"Finished in {duration}")
-
-    def print_stats(self):
-        """Print statistics about the processing."""
-        PU.bold("\nSTATS")
-        PU.ln()
-        PU.info("Duplicates:", 0)
-        PU.info(f"Records: {self.duplicate_records}", 1)
-        PU.info(f"Files: {self.duplicate_files}", 1)
-        PU.info(f"Artists: {len(self.db.artists)}", 1)
-        PU.info(f"Albums: {len(self.db.albums)}", 1)
-        PU.info("")
-        PU.info("Media files:", 0)
-        PU.info(f"Found: {self.media_files}", 1)
-        PU.info(f"Annotations: {self.file_annotations}", 1)
-        PU.ln()
 
 
 class DuplicateProcessor:
@@ -156,7 +90,7 @@ class DuplicateProcessor:
             keepable = self._get_keepable_media(dups)
             PU.log(f"<- Found keepable: {keepable.path}", 0)
 
-        file_path = os.path.join(self.data_folder, "duplicates-with-keepers.json")
+        file_path = os.path.join(self.config.data_folder, "duplicates-with-keepers.json")
         with open(file_path, "w", encoding="utf-8") as file:
             file.write(jsonpickle.encode(self.dups_media_files, indent=4))
 
