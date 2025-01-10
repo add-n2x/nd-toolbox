@@ -91,8 +91,12 @@ for f in FILES:
 @pytest.fixture(scope="session")
 def processor():
     """Fixture to create a DuplicateProcessor instance."""
-    ToolboxConfig(False)
-    processor = DuplicateProcessor(ND_DATABASE_PATH, DATA_DIR, BEETS_BASE_PATH, ND_BASE_PATH)
+    config = ToolboxConfig(False)
+    config.navidrome_db_path = ND_DATABASE_PATH
+    config.data_folder = DATA_DIR
+    config.source_base = BEETS_BASE_PATH
+    config.target_base = ND_BASE_PATH
+    processor = DuplicateProcessor(config)
     yield processor
 
 
