@@ -1,4 +1,13 @@
+
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![MusicBrainz](https://img.shields.io/badge/Musicbrainz-EB743B?style=for-the-badge&logo=musicbrainz&logoColor=BA478F)
+![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
+
 # Navidrome Toolbox
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/add-n2x/nd-toolbox/docker-hub.yml)
+![Ruff Style](https://img.shields.io/badge/style-ruff-41B5BE?style=flat)
+![GitHub License](https://img.shields.io/github/license/add-n2x/nd-toolbox)
+
 
 Remove duplicates from your [Navidrome](https://www.navidrome.org/) music library, while keeping play counts 
 and ratings. 
