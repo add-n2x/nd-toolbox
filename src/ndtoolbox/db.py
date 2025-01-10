@@ -69,6 +69,7 @@ class NavidromeDb:
         NavidromeDbConnection.db_path = db_path
         self.user_id = self.init_user()
 
+        # Initialize caches for artists and albums.
         self.artists = {}
         self.albums = {}
 
