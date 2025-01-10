@@ -9,9 +9,9 @@
 Remove duplicates from your [Navidrome](https://www.navidrome.org/) music library, while keeping play counts 
 and ratings. And other little helpers for Navidrome Music Server.
 
-ND Toolbox utilizes Beets and the MusicBrainz database to keep your music library clean and tidy. 
+_Navidrome Toolbox_ utilizes Beets and the MusicBrainz database to keep your music library clean and tidy. 
 
-Deploy Navidrom Toolbox with Docker, along your existing Navidrome installation.
+Deploy _Navidrome Toolbox_ with Docker, along your existing Navidrome installation.
 
 ![MusicBrainz](https://img.shields.io/badge/Musicbrainz-EB743B?style=for-the-badge&logo=musicbrainz&logoColor=BA478F)
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
@@ -59,7 +59,7 @@ Optionally set these environment variables:
 
 ## Usage
 
-For all command first log into the container with:
+For all commands first log into the container with:
 
 ```bash
 docker exec -it nd-toolbox bash
