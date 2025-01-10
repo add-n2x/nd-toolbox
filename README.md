@@ -1,5 +1,6 @@
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/add-n2x/nd-toolbox/docker-hub.yml)
-![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)
+![Python](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fadd-n2x%2Fnd-toolbox%2Frefs%2Fheads%2Fmain%2Fpyproject.toml&query=tool.poetry.dependencies.python&label=Python)
+![Beets](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fadd-n2x%2Fnd-toolbox%2Frefs%2Fheads%2Fmain%2Fpyproject.toml&query=tool.poetry.dependencies.beets&label=Beets)
 ![Ruff Style](https://img.shields.io/badge/style-ruff-41B5BE?style=flat)
 ![GitHub License](https://img.shields.io/github/license/add-n2x/nd-toolbox)
 
