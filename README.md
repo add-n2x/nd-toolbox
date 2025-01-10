@@ -6,15 +6,16 @@
 
 # Navidrome Toolbox
 
-Remove duplicates from your [Navidrome](https://www.navidrome.org/) music library, while keeping play counts 
-and ratings. And other little helpers for Navidrome Music Server.
+**Navidrome Toolbox** is a utility that enhances the functionality of [Navidrome Music Server](https://www.navidrome.org/) 
+using [Beets](https://beets.io/) and custom logic. 
 
-_Navidrome Toolbox_ utilizes Beets and the MusicBrainz database to keep your music library clean and tidy. 
+It aims to maintain a well-organized music library by:
+- Removing duplicate tracks while preserving play counts and ratings
+- Avoiding the need for user interaction as much as possible
+- Offering additional helpful tools for managing your Navidrome library
 
-Deploy _Navidrome Toolbox_ with Docker, along your existing Navidrome installation.
-
-![MusicBrainz](https://img.shields.io/badge/Musicbrainz-EB743B?style=for-the-badge&logo=musicbrainz&logoColor=BA478F)
-![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
+To set up "Navidrome Toolbox," deploy it as a Docker container alongside your existing Navidrome 
+installation.
 
 > [!IMPORTANT]
 > This repository is work in progress. Features and documentation are not yet completed.
@@ -38,6 +39,15 @@ docker run --rm -it \
     --entrypoint bash nd-toolbox
 ```
 
+You are now inside the Navidrome Toolbox container, prepared to utilize its commands.
+
+If you installed Navidrome Toolbox using a Docker GUI on a NAS or similar device, enter 
+the container shell with:
+
+```bash
+docker exec -it nd-toolbox bash
+```
+
 ### Volumes
 
 Bind-mount the following local directories into the container:
@@ -58,12 +68,6 @@ Optionally set these environment variables:
 | `ND_BASE_PATH`  | Base path of the music library within your Navidrome container. Defaults to `/music/library`. |
 
 ## Usage
-
-For all commands first log into the container with:
-
-```bash
-docker exec -it nd-toolbox bash
-```
 
 ### Remove files with unsupported extensions
 
@@ -144,7 +148,6 @@ The criteria to decide on the media file to keep is as follows:
 
 This library is based on the important groundwork provided by the
 [iTunes Navidrome Migration](https://github.com/Stampede/itunes-navidrome-migration) scripts.
-This is what finally made my move to Navidrome possible.
 
 Also, kudos to the Navidrome developers for building a music server that is here to stay.
 
