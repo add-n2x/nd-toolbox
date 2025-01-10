@@ -72,7 +72,7 @@ dev.init::
 	$(shell cp -n config/beets/dev.config.yaml config/beets/config.yaml)
 	poetry install
 dev.shell::
-	poetry shell
+	export BEETSDIR=$(BEETSDIR) && poetry shell
 dev.spell::
 	poetry run codespell
 dev.ruff::
