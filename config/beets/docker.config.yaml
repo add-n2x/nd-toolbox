@@ -6,9 +6,11 @@ import:
   write: no
   autotag: no
   log: /data/beets/beetslog.txt
+ui:
+  color: yes
 pluginpath:
     - src/beetsplug
-plugins: duplicates duplicatez
+plugins: duplicates duplicatez info
 duplicates:
   format: $mb_trackid - $mb_albumid | $path
   keys: [mb_trackid, mb_albumid]
