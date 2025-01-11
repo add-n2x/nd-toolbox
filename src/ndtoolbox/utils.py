@@ -62,18 +62,18 @@ class Stats:
             duration = f"{round(duration / 60, 2)} minutes"
         else:
             duration = f"{duration} seconds"
-        PrintUtils.success(f"Finished in {duration}")
+        PrintUtil.success(f"Finished in {duration}")
 
     def print_stats(self):
         """Print statistics about the processing."""
-        PrintUtils.bold("\nSTATS")
-        PrintUtils.ln()
-        PrintUtils.info("Duplicates:", 0)
-        PrintUtils.info(f"Tuples: {self.duplicate_records}", 1)
-        PrintUtils.info(f"Files: {self.duplicate_files}", 1)
-        PrintUtils.info(f"Artists: {len(self.db.artists)}", 1)
-        PrintUtils.info(f"Albums: {len(self.db.albums)}", 1)
-        PrintUtils.ln()
+        PrintUtil.bold("\nSTATS")
+        PrintUtil.ln()
+        PrintUtil.info("Duplicates:", 0)
+        PrintUtil.info(f"Tuples: {self.duplicate_records}", 1)
+        PrintUtil.info(f"Files: {self.duplicate_files}", 1)
+        PrintUtil.info(f"Artists: {len(self.db.artists)}", 1)
+        PrintUtil.info(f"Albums: {len(self.db.albums)}", 1)
+        PrintUtil.ln()
 
 
 class FileUtil:
@@ -251,7 +251,7 @@ class StringUtil:
         return f"{StringUtil.GRAY}{text}{StringUtil.RESET}"
 
 
-class PrintUtils:
+class PrintUtil:
     """
     Utilities for printing and logging.
     """
@@ -267,14 +267,14 @@ class PrintUtils:
     def ln(thick=False):
         """Print a ASCII line with optional length."""
         c = "─" if not thick else "━"
-        PrintUtils.print(c * 80)
+        PrintUtil.print(c * 80)
         ToolboxConfig.logger.info(c * 80)
 
     @staticmethod
     def bold(msg, lvl=0, log=True):
         """Print bold text with indentation based on level."""
         msg = StringUtil.bold(msg)
-        PrintUtils.print(PrintUtils.indent(msg, lvl))
+        PrintUtil.print(PrintUtil.indent(msg, lvl))
         if log:
             ToolboxConfig.logger.info(msg)
 
@@ -282,60 +282,60 @@ class PrintUtils:
     def underline(msg, lvl=0, log=True):
         """Print unterlined text with indentation based on level."""
         msg = StringUtil.underline(msg)
-        PrintUtils.print(PrintUtils.indent(msg, lvl))
+        PrintUtil.print(PrintUtil.indent(msg, lvl))
         if log:
             ToolboxConfig.logger.info(msg)
 
     @staticmethod
     def info(msg, lvl=0, log=True, end="\n"):
         """Print normal text with indentation based on level."""
-        PrintUtils.print(PrintUtils.indent(msg, lvl), end=end)
+        PrintUtil.print(PrintUtil.indent(msg, lvl), end=end)
         if log:
-            ToolboxConfig.logger.info(PrintUtils.indent(msg, lvl))
+            ToolboxConfig.logger.info(PrintUtil.indent(msg, lvl))
 
     @staticmethod
     def error(msg, lvl=0):
         """Print red text with indentation based on level."""
         msg = StringUtil.red(msg)
-        PrintUtils.print(PrintUtils.indent(msg, lvl))
+        PrintUtil.print(PrintUtil.indent(msg, lvl))
         ToolboxConfig.logger.error(msg)
 
     @staticmethod
     def success(msg, lvl=0):
         """Print green text with indentation based on level."""
         msg = StringUtil.green(msg)
-        PrintUtils.print(PrintUtils.indent(msg, lvl))
+        PrintUtil.print(PrintUtil.indent(msg, lvl))
         ToolboxConfig.logger.info(msg)
 
     @staticmethod
     def warning(msg, lvl=0):
         """Print orange text with indentation based on level."""
         msg = StringUtil.orange(msg)
-        PrintUtils.print(PrintUtils.indent(msg, lvl))
+        PrintUtil.print(PrintUtil.indent(msg, lvl))
         ToolboxConfig.logger.warning(msg)
 
     @staticmethod
     def note(msg, lvl=0):
         """Print note text with indentation based on level."""
         msg = StringUtil.blue(msg)
-        PrintUtils.print(PrintUtils.indent(msg, lvl))
+        PrintUtil.print(PrintUtil.indent(msg, lvl))
         ToolboxConfig.logger.info(msg)
 
     @staticmethod
     def print(msg, log=True, end="\n"):
         """Print text with progress bar line handling."""
-        terminal_height = PrintUtils.get_terminal_height()
-        PrintUtils.move_cursor_to_line(terminal_height - 1)
-        PrintUtils.clear_line()
+        terminal_height = PrintUtil.get_terminal_height()
+        PrintUtil.move_cursor_to_line(terminal_height - 1)
+        PrintUtil.clear_line()
         print(msg, end)
-        PrintUtils.move_cursor_to_line(terminal_height)
+        PrintUtil.move_cursor_to_line(terminal_height)
         sys.stdout.flush()
         ToolboxConfig.logger.info(msg)
 
     @staticmethod
     def log(msg, lvl=0):
         """Log info message with indentation based on level."""
-        msg = PrintUtils.indent(msg, lvl)
+        msg = PrintUtil.indent(msg, lvl)
         ToolboxConfig.logger.info(msg)
 
     @staticmethod
@@ -371,9 +371,9 @@ class PrintUtils:
         :param total: Total value for completion (int).
         :param length: Length of the progress bar (default is 50).
         """
-        terminal_height = PrintUtils.get_terminal_height()
-        PrintUtils.move_cursor_to_line(terminal_height)
-        PrintUtils.clear_line()
+        terminal_height = PrintUtil.get_terminal_height()
+        PrintUtil.move_cursor_to_line(terminal_height)
+        PrintUtil.clear_line()
         percent = 100 * (progress / total)
         bar_length = int(length * progress / total)
         bar = "█" * bar_length + "·" * (length - bar_length)
@@ -385,9 +385,9 @@ class PrintUtils:
         """
         Clears the progress bar and restores normal terminal behavior after completion.
         """
-        PrintUtils.progress_bar(100, 100)
-        terminal_height = PrintUtils.get_terminal_height()
-        PrintUtils.move_cursor_to_line(terminal_height)  # Move to the last line
+        PrintUtil.progress_bar(100, 100)
+        terminal_height = PrintUtil.get_terminal_height()
+        PrintUtil.move_cursor_to_line(terminal_height)  # Move to the last line
         sys.stdout.write("\n\n")  # Move to the next line for normal printing
         sys.stdout.flush()
 
@@ -412,22 +412,22 @@ class FileTools:
             source = source[2:]
         abs_target = os.path.join(os.path.abspath(target), "removed-media")
         msg = f"[dry-run: {dry}] Moving files file in '{source}' having '{str(extensions)}' extensions, to '{target}'."
-        PrintUtils.info(msg)
+        PrintUtil.info(msg)
         for ext in extensions:
             search = os.path.join(source, f"**/*.{ext}")
-            PrintUtils.info(f"[dry-run: {dry}] Searching .{ext} files ({search})", 1)
+            PrintUtil.info(f"[dry-run: {dry}] Searching .{ext} files ({search})", 1)
             for file in glob.iglob(search, recursive=True):
-                PrintUtils.info(f"[dry-run: {dry}] Found '{file}'")
+                PrintUtil.info(f"[dry-run: {dry}] Found '{file}'")
 
                 # Create folder hierarchy in target
                 abs_target_dir = os.path.join(abs_target, os.path.dirname(file))
-                PrintUtils.info(f"[dry-run: {dry}] Creating target directory: {abs_target_dir}", 2)
+                PrintUtil.info(f"[dry-run: {dry}] Creating target directory: {abs_target_dir}", 2)
                 if not dry:
                     os.makedirs(abs_target_dir, exist_ok=True)
 
                 # Move files
                 abs_file = os.path.abspath(file)
-                PrintUtils.info(f"[dry-run: {dry}] Move {abs_file} to {abs_target_dir}", 2)
+                PrintUtil.info(f"[dry-run: {dry}] Move {abs_file} to {abs_target_dir}", 2)
                 if not dry:
                     shutil.move(abs_file, abs_target_dir)
 
@@ -486,21 +486,21 @@ class ToolboxConfig:
             level=log_level,
             format="%(log_color)s %(msecs)d %(name)s %(levelname)s %(message)s",
         )
-        PrintUtils.info(f"Initialized logger with level: {log_level} and log file: {log_file}")
+        PrintUtil.info(f"Initialized logger with level: {log_level} and log file: {log_file}")
 
         # Print app version
         with open("pyproject.toml", mode="rb") as file:
             data = tomli.load(file)
             version = data["tool"]["poetry"]["version"]
-            PrintUtils.ln()
-            PrintUtils.bold(f"  NAVIDROME TOOLBOX v{version}")
-            PrintUtils.ln()
+            PrintUtil.ln()
+            PrintUtil.bold(f"  NAVIDROME TOOLBOX v{version}")
+            PrintUtil.ln()
 
         # Print config details
-        PrintUtils.bold("\nInitializing configuration")
-        PrintUtils.ln()
-        PrintUtils.info(f"Dry-run: {ToolboxConfig.dry_run}")
-        PrintUtils.info(f"Navidrome database path: {self.navidrome_db_path}")
-        PrintUtils.info(f"Output folder: {ToolboxConfig.data_folder}")
-        PrintUtils.info(f"Source base: {ToolboxConfig.source_base}")
-        PrintUtils.info(f"Target base: {ToolboxConfig.target_base}")
+        PrintUtil.bold("\nInitializing configuration")
+        PrintUtil.ln()
+        PrintUtil.info(f"Dry-run: {ToolboxConfig.dry_run}")
+        PrintUtil.info(f"Navidrome database path: {self.navidrome_db_path}")
+        PrintUtil.info(f"Output folder: {ToolboxConfig.data_folder}")
+        PrintUtil.info(f"Source base: {ToolboxConfig.source_base}")
+        PrintUtil.info(f"Target base: {ToolboxConfig.target_base}")

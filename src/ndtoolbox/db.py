@@ -7,7 +7,7 @@ from typing import Generator
 
 from ndtoolbox.model import Album, Annotation, Artist, MediaFile
 from ndtoolbox.utils import DateUtil as DU
-from ndtoolbox.utils import PrintUtils as PU
+from ndtoolbox.utils import PrintUtil as PU
 
 
 class NavidromeDbConnection(object):

@@ -14,7 +14,7 @@ from easydict import EasyDict
 from ndtoolbox.db import NavidromeDb, NavidromeDbConnection
 from ndtoolbox.model import Annotation, MediaFile
 from ndtoolbox.utils import CLI, FileTools, FileUtil, Stats, ToolboxConfig
-from ndtoolbox.utils import PrintUtils as PU
+from ndtoolbox.utils import PrintUtil as PU
 from ndtoolbox.utils import StringUtil as SU
 
 
