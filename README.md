@@ -83,7 +83,7 @@ By default it performs a dry-run, without actually moving files. Pass an `DRY_RU
 files. Moved files are moved to a `removed-media` directory inside your `DATA_DIR`.
 
 ```bash
-make sh.remove-unsupported DRY_RUN=true
+make sh.remove-unsupported DRY_RUN=false
 ```
 
 ### Import music into internal library
@@ -111,11 +111,23 @@ and Album ID (`mb_albumid`).
 make beet.duplicates
 ```
 
+### Load details for all duplicates from Navidrome database
+
+```bash
+make nd.load-duplicates
+```
+
+### Manually backup the Navidrome database
+
+```bash
+make nd.backup
+```
+
 ### Merge and update annotations
 
 Merge annotations such as play count and rating within duplicates and store the result in the Navidrome database.
 
-The command backups the navidrome database before merging annotations. To be safe always create an additional 
+The command backups the MNavidrome database before merging annotations. To be safe always create an additional 
 backup of your database manually.
 
 ```bash
