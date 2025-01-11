@@ -385,16 +385,15 @@ class PrintUtils:
         sys.stdout.flush()
 
     @staticmethod
-    def progress_done():
+    def progress_done(total):
         """
         Clears the progress bar and restores normal terminal behavior after completion.
         """
+        PrintUtils.progress_bar(100, 100)
         terminal_height = PrintUtils.get_terminal_height()
         PrintUtils.move_cursor_to_line(terminal_height)  # Move to the last line
-        # PrintUtils.clear_line()  # Clear the progress bar
-        sys.stdout.write("\n")  # Move to the next line for normal printing
+        sys.stdout.write("\n\n")  # Move to the next line for normal printing
         sys.stdout.flush()
-        PrintUtils.success("Done.")
 
 
 class FileTools:
@@ -502,7 +501,7 @@ class ToolboxConfig:
             PrintUtils.ln()
 
         # Print config details
-        PrintUtils.bold("Initializing configuration")
+        PrintUtils.bold("\nInitializing configuration")
         PrintUtils.ln()
         PrintUtils.info(f"Dry-run: {ToolboxConfig.dry_run}")
         PrintUtils.info(f"Navidrome database path: {self.navidrome_db_path}")
