@@ -21,6 +21,24 @@
             "env": {
                 "PYTHONPATH": "${cwd}:${cwd}/src:${env:PYTHONPATH}"
             }
+        },
+        {
+            "name": "Debug: merge-annotations",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "src.ndtoolbox.app",
+            "args": [
+                "poetry",
+                "run",
+                "python",
+                "src/ndtoolbox/app/main",
+                "action=merge-annotations"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${cwd}:${cwd}/src:${env:PYTHONPATH}"
+            }
         }
     ]
 }
