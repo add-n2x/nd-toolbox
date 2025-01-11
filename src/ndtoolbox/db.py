@@ -3,6 +3,7 @@ Navidrome database classes.
 """
 
 import sqlite3
+from typing import Generator
 
 from ndtoolbox.model import Album, Annotation, Artist, MediaFile
 from ndtoolbox.utils import DateUtil as DU
@@ -136,6 +137,55 @@ class NavidromeDb:
             if media.album:
                 self.albums[media.album_id] = media.album
         return media
+
+    def get_media_batch(self, file_paths: list[str], conn: NavidromeDbConnection) -> Generator[MediaFile]:
+        """Get a batch of media files by a list of file paths.
+
+        Args:
+            file_paths: A list of file paths.
+            conn: A NavidromeDbConnection object.
+
+        Returns:
+            (Generator[MediaFile]): A generator of MediaFile objects.
+        """
+        query = """
+            SELECT  id, path, title, year, track_number, duration, bit_rate,
+                    artist_id, artist, album_id, album, mbz_recording_id
+            FROM media_file
+            WHERE path IN ({})
+        """.format(",".join("?" for _ in file_paths))
+
+        cursor = conn.cursor()
+        params = tuple(file_paths) + () * (len(file_paths) + 1)
+        results = cursor.execute(query, params).fetchall()
+        for result in results:
+            media = MediaFile(*result)
+
+            # Get file annotation
+            media.annotation = self.get_media_annotation(media, Annotation.Type.media_file, conn)
+            # If no annotation exists, create one
+            if not media.annotation:
+                media.annotation = Annotation(
+                    item_id=media.id,
+                    item_type=Annotation.Type.media_file,
+                    play_count=0,
+                    play_date=None,
+                    rating=0,
+                    starred=False,
+                    starred_at=None,
+                )
+            # Get artist data
+            media.artist = self.artists.get(media.artist_id)
+            media.artist = self.get_artist(media, media.artist_id, conn) if not media.artist else media.artist
+            if media.artist:
+                self.artists[media.artist_id] = media.artist
+            # Get album data
+            media.album = self.albums.get(media.album_id)
+            media.album = self.get_album(media, media.album_id, conn) if not media.album else media.album
+            if media.album:
+                self.albums[media.album_id] = media.album
+
+            yield media
 
     def get_media_file(self, file_path: str, conn: NavidromeDbConnection) -> MediaFile:
         """

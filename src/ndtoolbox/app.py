@@ -280,30 +280,35 @@ class DuplicateProcessor:
             dups_input (dict[str, list[str]]): A dictionary where the keys are duplicate identifiers and the values
                 are lists of file paths.
         """
-        PU.info("Loading data from Navidrome database ", end="")
+        PU.info("Loading data from Navidrome database")
         with NavidromeDbConnection() as conn:
+            progress: int = 0
             for key in dups_input.keys():
-                PU.info(f"[*] Processing duplicate {key}")
+                PU.log(f"[·] Processing duplicate {key}")
+                progress_total = len(dups_input.keys())
                 files = dups_input.get(key)
                 self.stats.duplicate_records += 1
+                self.dups_media_files[key] = []
 
-                # Initialize the list for this key if it doesn't exist.
-                if not self.dups_media_files.get(key):
-                    self.dups_media_files[key] = []
+                for file in files:
+                    # Normalize Unicode characters in the file path. Otherwise characters like `á` (`\u0061\u0301`)
+                    # and `á` (`\u00e1`) are not threaded as the same.
+                    file = unicodedata.normalize("NFC", file)
 
-                    for file in files:
-                        self.stats.duplicate_files += 1
-                        # Normalize Unicode characters in the file path. Otherwise characters like `á` (`\u0061\u0301`)
-                        # and `á` (`\u00e1`) are not threaded as the same.
-                        file = unicodedata.normalize("NFC", file)
+                batch = list(self.db.get_media_batch(files, conn))
+                self.dups_media_files[key] += batch
+                self.stats.duplicate_files += len(files)
 
-                        PU.log(f"    Query {file}")
-                        media: MediaFile = self.db.get_media(file, conn)
-                        if media:
-                            self.dups_media_files[key].append(media)
-                        self._log_info(file, media)
+                PU.progress_bar(progress, progress_total)
+                progress += 1
 
-        PU.success("> Done.")
+                if len(files) != len(batch):
+                    missing_media = [f for f in files if f not in [m.path for m in batch]]
+                    for file in missing_media:
+                        PU.warning(msg=f"\nExcluding media file not found in Navidrome: {file}")
+
+            PU.progress_done()
+            PU.progress_bar(100, progress_total)
 
     def _merge_annotation_list(self, dups_media_files: dict[str, list[MediaFile]]):
         """
@@ -387,33 +392,6 @@ class DuplicateProcessor:
                 for media in dups:
                     self.db.store_annotation(media.annotation, conn)
             conn.commit()
-
-    def _log_info(self, file_path: str, media: MediaFile):
-        """
-        Log information about the media file.
-        """
-        if media:
-            PU.info(f"└─ {media.path}", 1)
-            self.stats.media_files += 1
-            if media.annotation:
-                PU.log(f"└───── {media.annotation}", 2)
-                self.stats.file_annotations += 1
-            if media.artist:
-                PU.log(f"└───── {media.artist}", 2)
-                if media.artist.annotation:
-                    PU.log(f"└───── {media.artist.annotation}", 3)
-            else:
-                PU.warning(f"└───── Artist '{media.artist_name}' not found in database!", 2)
-            if media.album:
-                PU.log(f"└───── {media.album}", 2)
-                if media.album.annotation:
-                    PU.log(f"└───── {media.album.annotation}", 3)
-            else:
-                # This is not seen as an error because not all media files have an album
-                PU.warning(f"└───── Album '{media.album_name}' not found in database!", 2)
-        else:
-            self.errors.append({"error": "media file not found.", "path": file_path})
-            PU.error(f"└───── Media file for '{file_path}' not found in database! Exclude from processing.", 1)
 
     def _has_errors(self) -> bool:
         """Check if there are any errors in the processing."""
