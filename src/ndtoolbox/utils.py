@@ -73,10 +73,6 @@ class Stats:
         PrintUtils.info(f"Files: {self.duplicate_files}", 1)
         PrintUtils.info(f"Artists: {len(self.db.artists)}", 1)
         PrintUtils.info(f"Albums: {len(self.db.albums)}", 1)
-        PrintUtils.info("")
-        PrintUtils.info("Media files:", 0)
-        PrintUtils.info(f"Found: {self.media_files}", 1)
-        PrintUtils.info(f"Annotations: {self.file_annotations}", 1)
         PrintUtils.ln()
 
 
@@ -347,7 +343,7 @@ class PrintUtils:
         """
         Returns the terminal's height in lines.
         """
-        return os.get_terminal_size().lines
+        return shutil.get_terminal_size().lines
 
     @staticmethod
     def move_cursor_to_line(line):
