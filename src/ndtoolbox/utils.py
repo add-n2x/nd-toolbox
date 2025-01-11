@@ -69,7 +69,7 @@ class Stats:
         PrintUtils.bold("\nSTATS")
         PrintUtils.ln()
         PrintUtils.info("Duplicates:", 0)
-        PrintUtils.info(f"Records: {self.duplicate_records}", 1)
+        PrintUtils.info(f"Tuples: {self.duplicate_records}", 1)
         PrintUtils.info(f"Files: {self.duplicate_files}", 1)
         PrintUtils.info(f"Artists: {len(self.db.artists)}", 1)
         PrintUtils.info(f"Albums: {len(self.db.albums)}", 1)
@@ -260,6 +260,8 @@ class PrintUtils:
     Utilities for printing and logging.
     """
 
+    in_progress: bool = True
+
     @staticmethod
     def indent(msg: str, lvl: int = 0) -> str:
         """Indent a message by a specified number of levels."""
@@ -269,14 +271,14 @@ class PrintUtils:
     def ln(thick=False):
         """Print a ASCII line with optional length."""
         c = "─" if not thick else "━"
-        print(c * 80)
+        PrintUtils.print(c * 80)
         ToolboxConfig.logger.info(c * 80)
 
     @staticmethod
     def bold(msg, lvl=0, log=True):
         """Print bold text with indentation based on level."""
         msg = StringUtil.bold(msg)
-        print(PrintUtils.indent(msg, lvl))
+        PrintUtils.print(PrintUtils.indent(msg, lvl))
         if log:
             ToolboxConfig.logger.info(msg)
 
@@ -284,14 +286,14 @@ class PrintUtils:
     def underline(msg, lvl=0, log=True):
         """Print unterlined text with indentation based on level."""
         msg = StringUtil.underline(msg)
-        print(PrintUtils.indent(msg, lvl))
+        PrintUtils.print(PrintUtils.indent(msg, lvl))
         if log:
             ToolboxConfig.logger.info(msg)
 
     @staticmethod
     def info(msg, lvl=0, log=True, end="\n"):
         """Print normal text with indentation based on level."""
-        print(PrintUtils.indent(msg, lvl), end=end)
+        PrintUtils.print(PrintUtils.indent(msg, lvl), end=end)
         if log:
             ToolboxConfig.logger.info(PrintUtils.indent(msg, lvl))
 
@@ -299,28 +301,39 @@ class PrintUtils:
     def error(msg, lvl=0):
         """Print red text with indentation based on level."""
         msg = StringUtil.red(msg)
-        print(PrintUtils.indent(msg, lvl))
+        PrintUtils.print(PrintUtils.indent(msg, lvl))
         ToolboxConfig.logger.error(msg)
 
     @staticmethod
     def success(msg, lvl=0):
         """Print green text with indentation based on level."""
         msg = StringUtil.green(msg)
-        print(PrintUtils.indent(msg, lvl))
+        PrintUtils.print(PrintUtils.indent(msg, lvl))
         ToolboxConfig.logger.info(msg)
 
     @staticmethod
     def warning(msg, lvl=0):
         """Print orange text with indentation based on level."""
         msg = StringUtil.orange(msg)
-        print(PrintUtils.indent(msg, lvl))
+        PrintUtils.print(PrintUtils.indent(msg, lvl))
         ToolboxConfig.logger.warning(msg)
 
     @staticmethod
     def note(msg, lvl=0):
         """Print note text with indentation based on level."""
         msg = StringUtil.blue(msg)
-        print(PrintUtils.indent(msg, lvl))
+        PrintUtils.print(PrintUtils.indent(msg, lvl))
+        ToolboxConfig.logger.info(msg)
+
+    @staticmethod
+    def print(msg, log=True, end="\n"):
+        """Print text with progress bar line handling."""
+        terminal_height = PrintUtils.get_terminal_height()
+        PrintUtils.move_cursor_to_line(terminal_height - 1)
+        PrintUtils.clear_line()
+        print(msg, end)
+        PrintUtils.move_cursor_to_line(terminal_height)
+        sys.stdout.flush()
         ToolboxConfig.logger.info(msg)
 
     @staticmethod
@@ -328,6 +341,60 @@ class PrintUtils:
         """Log info message with indentation based on level."""
         msg = PrintUtils.indent(msg, lvl)
         ToolboxConfig.logger.info(msg)
+
+    @staticmethod
+    def get_terminal_height():
+        """
+        Returns the terminal's height in lines.
+        """
+        return os.get_terminal_size().lines
+
+    @staticmethod
+    def move_cursor_to_line(line):
+        """
+        Moves the cursor to a specific line in the terminal.
+
+        :param line: Line number (1-based index).
+        """
+        sys.stdout.write(f"\033[{line};0H")
+        # sys.stdout.flush()
+
+    @staticmethod
+    def clear_line():
+        """
+        Clears the current line in the terminal to remove left over text.
+        """
+        sys.stdout.write("\033[K")
+
+    @staticmethod
+    def progress_bar(progress, total, length=80):
+        """
+        Renders a progress bar at the last line of the terminal.
+
+        :param progress: Current progress (int).
+        :param total: Total value for completion (int).
+        :param length: Length of the progress bar (default is 50).
+        """
+        terminal_height = PrintUtils.get_terminal_height()
+        PrintUtils.move_cursor_to_line(terminal_height)
+        PrintUtils.clear_line()
+        percent = 100 * (progress / total)
+        bar_length = int(length * progress / total)
+        bar = "█" * bar_length + "·" * (length - bar_length)
+        sys.stdout.write(StringUtil.green(f"|{bar}| {percent:.2f}%"))
+        sys.stdout.flush()
+
+    @staticmethod
+    def progress_done():
+        """
+        Clears the progress bar and restores normal terminal behavior after completion.
+        """
+        terminal_height = PrintUtils.get_terminal_height()
+        PrintUtils.move_cursor_to_line(terminal_height)  # Move to the last line
+        # PrintUtils.clear_line()  # Clear the progress bar
+        sys.stdout.write("\n")  # Move to the next line for normal printing
+        sys.stdout.flush()
+        PrintUtils.success("Done.")
 
 
 class FileTools:
@@ -375,7 +442,7 @@ class ToolboxConfig:
     Configuration class for ND Toolbox.
     """
 
-    FILE_BEETS_INPrintUtilsT_JSON: str
+    FILE_BEETS_INPUT_JSON: str
     FILE_TOOLBOX_DATA_JSON: str
     ERROR_REPORT_JSON: str
 
@@ -406,9 +473,7 @@ class ToolboxConfig:
         ToolboxConfig.target_base = os.getenv("ND_BASE_PATH")
 
         # Init file paths.
-        ToolboxConfig.FILE_BEETS_INPrintUtilsT_JSON = os.path.join(
-            ToolboxConfig.data_folder, "beets/beets-duplicates.json"
-        )
+        ToolboxConfig.FILE_BEETS_INPUT_JSON = os.path.join(ToolboxConfig.data_folder, "beets/beets-duplicates.json")
         ToolboxConfig.FILE_TOOLBOX_DATA_JSON = os.path.join(ToolboxConfig.data_folder, "nd-toolbox-data.json")
         ToolboxConfig.ERROR_REPORT_JSON = os.path.join(ToolboxConfig.data_folder, "nd-toolbox-error.json")
 
