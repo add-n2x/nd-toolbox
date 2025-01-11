@@ -219,7 +219,7 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
     assert starred is True
     assert starred_at == datetime.datetime(2025, 5, 7, 0, 0)
 
-    processor._merge_annotation_list({"key": dups})
+    processor._merge_annotation_list(dups)
 
     assert a.annotation.play_count == 10
     assert b.annotation.play_count == 10
@@ -241,7 +241,7 @@ def test_merge_annotation_list(processor: DuplicateProcessor):
     files = copy.copy(FILES)
 
     # Set up the processor with the test files
-    processor._merge_annotation_list({"key123": files})
+    processor._merge_annotation_list(files)
 
     for f in files:
         print("Play count: " + str(f.annotation.play_count))
