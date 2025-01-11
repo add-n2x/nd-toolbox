@@ -161,24 +161,12 @@ class NavidromeDb:
         for result in results:
             media = MediaFile(*result)
 
-            # Get file annotation
-            media.annotation = self.get_media_annotation(media, Annotation.Type.media_file, conn)
-            # If no annotation exists, create one
-            if not media.annotation:
-                media.annotation = Annotation(
-                    item_id=media.id,
-                    item_type=Annotation.Type.media_file,
-                    play_count=0,
-                    play_date=None,
-                    rating=0,
-                    starred=False,
-                    starred_at=None,
-                )
             # Get artist data
             media.artist = self.artists.get(media.artist_id)
             media.artist = self.get_artist(media, media.artist_id, conn) if not media.artist else media.artist
             if media.artist:
                 self.artists[media.artist_id] = media.artist
+
             # Get album data
             media.album = self.albums.get(media.album_id)
             media.album = self.get_album(media, media.album_id, conn) if not media.album else media.album
@@ -313,10 +301,13 @@ class NavidromeDb:
             conn (NavidromeDbConnection): The database connection to use.
 
         Returns:
-            Annotation: The annotation object for the given media file and type, if existing.
+            Annotation: The annotation object from the database, if existing. Otherwise it returns
+               the existsing annotation assigned to the media file.
         """
         item_id: str = media_file.__getattribute__(type.value)
-        return self.get_annotation(item_id, type, conn)
+        annotation = self.get_annotation(item_id, type, conn)
+        if not annotation:
+            return media_file.annotation
 
     def get_annotation(self, item_id: str, type: Annotation.Type, conn: NavidromeDbConnection) -> Annotation:
         """

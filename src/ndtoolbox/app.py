@@ -63,16 +63,32 @@ class DuplicateProcessor:
         """
         Merge annotations per duplicate records and store them to the database.
         """
-        self.stats.start()
         self._load_navidrome_data_file()
-        PU.bold("Merging and storing annotations for duplicate records")
+        self.stats.start()
+        progress_total = self.stats.duplicate_files
+        PU.bold("\nMerging and storing annotations for duplicate records")
         PU.ln()
-        self._merge_annotation_list(self.dups_media_files)
+
         n: int = 0
-        for _, dups in self.dups_media_files.items():
-            for media in dups:
-                self.db.store_annotation(media.annotation)
-                n += 1
+        # progress_total = len(dups)
+
+        with NavidromeDbConnection() as conn:
+            for _, dups in self.dups_media_files.items():
+                # Skip, if there are no duplicates left
+                if len(dups) == 0:
+                    PU.warning("No duplicate media files found for key '{key}'. Skipping unexpected scenario.")
+                    continue
+                elif len(dups) == 1:
+                    PU.log(f"There is only one media file in the duplicates list: {dups[0].path}")
+                    continue
+
+                # Merge annotations and store them to the database.
+                self._merge_annotation_list(dups)
+                for media in dups:
+                    self.db.store_annotation(media.annotation, conn)
+                    n += 1
+                PU.progress_bar(n, progress_total)
+        PU.progress_done(progress_total)
         PU.success(f"> Successfully updated annotations for {n} media files in the Navidrome database.")
         self.stats.stop()
         self.stats.print_duration()
@@ -309,30 +325,27 @@ class DuplicateProcessor:
 
             PU.progress_done(progress_total)
 
-    def _merge_annotation_list(self, dups_media_files: dict[str, list[MediaFile]]):
+    def _merge_annotation_list(self, dups: list[MediaFile]):
         """
         Merge data of all media file annotations referred to as duplicates.
 
         Args:
-           dups_media_files (dict[str, list[MediaFile]]): Dictionary of media files grouped by their key.
+           dups_media_files (list[MediaFile]): Dictionary of media files grouped by their key.
+
         """
-        dups: list[MediaFile]
-        for key, dups in dups_media_files.items():
-            # Skip, if there are no duplicates left
-            if not dups or len(dups) <= 1:
-                PU.warning("> No duplicate media files found for key '{key}'. Skipping.")
-                continue
+        # Build title for logging purposes
+        title = dups[0].title
+        if dups[0].artist:
+            title = f"{dups[0].artist.name} - {title}"
+        PU.log(f"Merging {len(dups)} duplicates of '{title}' ")
 
-            # Build title for logging purposes.
-            title = dups[0].title
-            if dups[0].artist:
-                title = f"{dups[0].artist.name} - {title}"
-
-            PU.info(f"Merging {len(dups)} duplicates of '{title}' ", 0, False, end="")
-            PU.log(f"Merging {key} : {title} with {len(dups)} duplicates...")
-            if len(dups) < 2:
-                PU.warning("> No duplicates to be merged. Skipping.", 1)
-                continue
+        # Load annotations for all dups
+        with NavidromeDbConnection() as conn:
+            for dup in dups:
+                dup.annotation = self.db.get_media_annotation(dup, Annotation.Type.media_file, conn)
+                if not dup.annotation:
+                    PU.log(f"No annotation for media file found, creating new one: {dup.path}")
+                    dup.annotation = Annotation(dup.id, Annotation.Type.media_file, 0, None, 0, False, None)
 
             # Get merged annotation data from duplicates.
             (play_count, play_date, rating, starred, starred_at) = self._get_merged_annotation(dups)
@@ -343,7 +356,7 @@ class DuplicateProcessor:
                 dup.annotation.starred = starred
                 dup.annotation.starred_at = starred_at
             msg = f"> Merged annotations (play_count={play_count}, play_date={play_date}, rating={rating}, starred={starred}, starred_at={starred_at})"
-            PU.success(msg)
+            PU.log(msg)
 
     def _get_merged_annotation(self, dups: list[MediaFile]) -> tuple[int, datetime, int, bool, datetime]:
         """
@@ -363,6 +376,7 @@ class DuplicateProcessor:
 
         for dup in dups:
             a: Annotation = dup.annotation
+
             if a.play_count > play_count:
                 play_count = a.play_count
             if a.play_date:
