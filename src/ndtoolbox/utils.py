@@ -347,6 +347,12 @@ class PrintUtil:
         ToolboxConfig.logger.info(msg)
 
     @staticmethod
+    def debug(msg, lvl=0):
+        """Debug log message."""
+        msg = PrintUtil.indent(msg, lvl)
+        ToolboxConfig.logger.debug(msg)
+
+    @staticmethod
     def get_terminal_height():
         """
         Returns the terminal's height in lines.
