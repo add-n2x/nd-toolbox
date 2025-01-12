@@ -5,7 +5,6 @@ This module provides functionality to process duplicate media files.
 import json
 import os
 import sys
-import unicodedata
 from datetime import datetime
 
 import jsonpickle
@@ -18,13 +17,28 @@ from ndtoolbox.utils import PrintUtil as PU
 from ndtoolbox.utils import StringUtil as SU
 
 
+class DuplicateData:
+    """Cache for objects to process duplicates and their relations."""
+
+    directories: dict
+    artists: dict
+    albums: dict
+    media: dict
+
+    def __init__(self):
+        """Init cache."""
+        self.directories = {}
+        self.artists = {}
+        self.albums = {}
+        self.media = {}
+
+
 class DuplicateProcessor:
     """
     This class processes duplicate media files.
 
     Attributes:
         db (NavidromeDb): The Navidrome database DAO.
-        dups_media_files (dict): A dictionary containing the enhanced duplicate media files with data from Navidrome.
         stats (Stats): Contains statistics about the processing of duplicate media files.
         errors (list): A list to store any errors encountered during processing.
         data_folder (str): The path to the data folder where processed files will be saved.
@@ -36,7 +50,7 @@ class DuplicateProcessor:
 
     config: ToolboxConfig
     db: NavidromeDb
-    dups_media_files: dict
+    data: DuplicateData
     stats: Stats
     errors: list
 
@@ -54,10 +68,10 @@ class DuplicateProcessor:
             dry_run (bool): If True, no actual file operations will be performed.
         """
         self.config = config
+        self.data = DuplicateData()
         self.errors = []
-        self.db = NavidromeDb(config.navidrome_db_path)
-        self.stats = Stats(self.db)
-        self.dups_media_files = {}
+        self.db = NavidromeDb(config.navidrome_db_path, config, self)
+        self.stats = Stats(self)
 
     def merge_and_store_annotations(self):
         """
@@ -73,7 +87,7 @@ class DuplicateProcessor:
         # progress_total = len(dups)
 
         with NavidromeDbConnection() as conn:
-            for _, dups in self.dups_media_files.items():
+            for _, dups in self.data.media.items():
                 # Skip, if there are no duplicates left
                 if len(dups) == 0:
                     PU.warning("No duplicate media files found for key '{key}'. Skipping unexpected scenario.")
@@ -97,21 +111,21 @@ class DuplicateProcessor:
         """
         Detect deletable duplicate files based on the provided criteria.
         """
-        self.stats.start()
         self._load_navidrome_data_file()
+        self.stats.start()
         PU.bold("Evaluating deletable duplicates based on criteria")
         PU.ln()
-        for _, dups in self.dups_media_files.items():
+        for _, dups in self.data.media.items():
             PU.log(f"\n-> Evaluating {len(dups)} duplicates:")
             keepable = self._get_keepable_media(dups)
             PU.log(f"<- Found keepable: {keepable.path}", 0)
 
         file_path = os.path.join(self.config.data_folder, "duplicates-with-keepers.json")
         with open(file_path, "w", encoding="utf-8") as file:
-            file.write(jsonpickle.encode(self.dups_media_files, indent=4))
+            file.write(jsonpickle.encode(self.data.media, indent=4))
 
         # Print the list of deletable and keepable duplicates per album
-        dup_folders = self._split_duplicates_by_album_folder(self.dups_media_files)
+        dup_folders = self._split_duplicates_by_album_folder(self.data.media)
         PU.info("List duplicates per album folder:")
         PU.ln()
         for folder, dups in dup_folders.items():
@@ -171,7 +185,7 @@ class DuplicateProcessor:
         self._query_media_data(dups_input)
 
         # Persist data.
-        data = {"dups_media_files": self.dups_media_files, "stats": self.stats}
+        data = {"dups_media_files": self.data.media, "stats": self.stats, "cache": self.data}
         with open(self.config.FILE_TOOLBOX_DATA_JSON, "w", encoding="utf-8") as file:
             file.write(jsonpickle.encode(data, indent=4, keys=True))
         PU.success(f"Stored Navidrome data to '{self.config.FILE_TOOLBOX_DATA_JSON}'")
@@ -200,8 +214,9 @@ class DuplicateProcessor:
         # Load data from JSON file.
         with open(self.config.FILE_TOOLBOX_DATA_JSON, "r", encoding="utf-8") as file:
             data = jsonpickle.decode(file.read())
-            self.dups_media_files = data["dups_media_files"]
+            self.data.media = data["dups_media_files"]
             self.stats = data["stats"]
+            self.data = data["cache"]
             PU.success(f"Loaded duplicate records from '{self.config.FILE_TOOLBOX_DATA_JSON}'")
 
     def _split_duplicates_by_album_folder(
@@ -239,10 +254,12 @@ class DuplicateProcessor:
         # Keepable if there is only one duplicate
         if len(dups) == 1:
             # Mark related album as having a keepable duplicate
-            if dups[0].album is not None:
-                dups[0].album.has_keepable = True
-                # TODO Mark album folder as having a keepable duplicate
-                # dups[0].album_folder.set_keeper(dups[0])
+            # if dups[0].album is not None:
+            # dups[0].album.has_keepable = True
+            # TODO Mark album folder as having a keepable duplicate
+            # dups[0].album_folder.set_keeper(dups[0])
+            if dups[0].folder is not None:
+                dups[0].folder.has_keepable = True
             self.stats.media_files_keepable += 1
             PU.success(f"Chosen keepable: {dups[0].path}")
             return dups[0]
@@ -284,6 +301,7 @@ class DuplicateProcessor:
             return
 
         for paths in dups_input.values():
+            item: str
             for i, item in enumerate(paths):
                 paths[i] = item.replace(self.config.source_base, self.config.target_base, 1)
         PU.info(f"Updated all base paths from '{self.config.source_base}' to '{self.config.target_base}'.")
@@ -304,15 +322,9 @@ class DuplicateProcessor:
                 progress_total = len(dups_input.keys())
                 files = dups_input.get(key)
                 self.stats.duplicate_records += 1
-                self.dups_media_files[key] = []
-
-                for file in files:
-                    # Normalize Unicode characters in the file path. Otherwise characters like `á` (`\u0061\u0301`)
-                    # and `á` (`\u00e1`) are not threaded as the same.
-                    file = unicodedata.normalize("NFC", file)
-
+                self.data.media[key] = []
                 batch = list(self.db.get_media_batch(files, conn))
-                self.dups_media_files[key] += batch
+                self.data.media[key] += batch
                 self.stats.duplicate_files += len(files)
 
                 PU.progress_bar(progress, progress_total)
@@ -431,30 +443,42 @@ class DuplicateProcessor:
         """
         PU.note(f"Compare {SU.gray(this.path)} <=> {SU.gray(that.path)}", 0)
 
-        # INFO: Check for same album but different folders
-        left = FileUtil.get_folder(this.path)
-        right = FileUtil.get_folder(that.path)
-        PU.info(
-            f"Same album folder: {FileUtil.get_album_folder(this.path)} || {FileUtil.get_album_folder(that.path)}",
-            1,
-        )
-        if left != right:
-            self.errors.append(
-                {"error": "Album is spread across different folders", "file1": this.path, "file2": that.path}
-            )
-            PU.error(f"Album is in different folder: {SU.gray(this.path)} != {SU.gray(that.path)}", 1)
-        # Move on since this is just debugging info
+        # Check completeness of album folder
+        left = this.folder.missing()
+        right = that.folder.missing()
+        PU.info(f"Compare if album folder is missing tracks: {left} || {right}", 1)
+        if left and (left > 0) or right and (right > 0):
+            if left < right:
+                PU.info(f"This folder is more complete ({left}): {SU.gray(this.path)}")
+                return this
+            elif left > right:
+                PU.info(f"That folder is more complete ({right}): {SU.gray(that.path)}")
+                return that
+        # Skip if both are incomplete
 
-        # If the files album already contains a keepable, we wanna keep all the items
-        left = this.album and this.album.has_keepable
-        right = that.album and that.album.has_keepable
-        PU.info(f"Compare if album contain a keepable: {left} || {right}", 1)
+        # Check for bad folder names
+        left = this.folder.is_bad()
+        right = this.folder.is_bad()
+        PU.info(f"Compare if artist or album folder is named badly: {left} || {right}", 1)
+        if left and (left > 0) or right and (right > 0):
+            if left < right:
+                PU.info(f"This folder is named badly: {SU.gray(this.folder.missing())}")
+                return this
+            elif left > right:
+                PU.info(f"That folder is named badly: {SU.gray(that.folder.missing())}")
+                return that
+        # Skip if both are incomplete
+
+        # If the album folder already contains a keepable, we wanna keep all the items
+        left = this.folder and this.folder.has_keepable
+        right = that.folder and that.folder.has_keepable
+        PU.info(f"Compare if album folder contain a keepable: {left} || {right}", 1)
         if left != right:
             if left:
-                that.delete_reason = f"Other album already contains a keepable | {SU.gray(this.path)}"
+                that.delete_reason = f"Other album folder already contains a keepable | {SU.gray(this.path)}"
                 return this
             elif right:
-                this.delete_reason = f"Other album already contains a keepable | {SU.gray(that.path)}"
+                this.delete_reason = f"Other album folder already contains a keepable | {SU.gray(that.path)}"
                 return that
         # Skip, if they are the same
 

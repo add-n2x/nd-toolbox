@@ -19,6 +19,7 @@ from fuzzywuzzy import fuzz
 class Stats:
     """Statistics class to keep track of various counts."""
 
+    app: object
     duplicate_records: int
     duplicate_albums: int
     duplicate_artists: int
@@ -32,9 +33,9 @@ class Stats:
     _start: float = 0.0
     _stop: float = 0.0
 
-    def __init__(self, db):
+    def __init__(self, app):
         """Initialize statistics counters."""
-        self.db = db
+        self.app = app
         self.duplicate_records = 0
         self.duplicate_albums = 0
         self.duplicate_artists = 0
@@ -71,8 +72,9 @@ class Stats:
         PrintUtil.info("Duplicates:", 0)
         PrintUtil.info(f"Tuples: {self.duplicate_records}", 1)
         PrintUtil.info(f"Files: {self.duplicate_files}", 1)
-        PrintUtil.info(f"Artists: {len(self.db.artists)}", 1)
-        PrintUtil.info(f"Albums: {len(self.db.albums)}", 1)
+        PrintUtil.info(f"Artists: {len(self.app.data.artists)}", 1)
+        PrintUtil.info(f"Albums: {len(self.app.data.albums)}", 1)
+        PrintUtil.info(f"Directories: {len(self.app.data.directories)}", 1)
         PrintUtil.ln()
 
 
@@ -129,6 +131,12 @@ class FileUtil:
         """Get album folder from file path."""
         folder = FileUtil.get_folder(path)
         return folder.split(os.sep)[-1]
+
+    @staticmethod
+    def get_artist_folder(path: str) -> str:
+        """Get artist folder from file path."""
+        folder = FileUtil.get_folder(path)
+        return folder.split(os.sep)[-2]
 
     @staticmethod
     def get_file(path: str) -> str:
@@ -440,6 +448,7 @@ class ToolboxConfig:
     FILE_BEETS_INPUT_JSON: str
     FILE_TOOLBOX_DATA_JSON: str
     ERROR_REPORT_JSON: str
+    BAD_FOLDER_NAMES: list = ["unknown artist", "unknown album"]
 
     timezone: str = None
     dry_run: bool = None

@@ -2,11 +2,16 @@
 Model classes representing the Navidrome database.
 """
 
+import subprocess
 from datetime import datetime
 from enum import Enum
 from typing import Optional
 
+from easydict import EasyDict
+
 from ndtoolbox.utils import DateUtil as DU
+from ndtoolbox.utils import FileUtil, ToolboxConfig
+from ndtoolbox.utils import PrintUtil as PU
 
 
 class Annotation:
@@ -114,6 +119,7 @@ class MediaFile:
     Attributes:
        id (str): The unique identifier of the media file.
        path (str): The file path of the media file.
+       beets_path (str): The file path of the media file in Beets.
        title (str): The title of the media file.
        year (int): The release year of the media file.
        track_number (int): The track number of the media file.
@@ -133,6 +139,8 @@ class MediaFile:
 
     id: str
     path: str
+    beets_path: str
+    folder: object
     title: str
     year: int
     track_number: int
@@ -167,6 +175,8 @@ class MediaFile:
         """Init instance."""
         self.id = id
         self.path = path
+        self.beets_path = None
+        self.folder = None
         self.title = title
         self.year = year
         self.track_number = track_number
@@ -189,3 +199,75 @@ class MediaFile:
             track_number={self.track_number}, duration={self.duration}, bitrate={self.bitrate}, \
             artist_id={self.artist_id}, artist_name={self.artist_name} album_id={self.album_id}, \
             album_name={self.album_name}, mbz_recording_id={self.mbz_recording_id})"
+
+
+class AlbumFolder:
+    """
+    Album Folder model representing an album folder in the filesystem, holding a set of files.
+
+    If some Navidrome `MediaFile` is identified as a keeper, it will be mapped to the files dictionary.
+
+    Depending on how many keepable or deletable duplicate, or non-duplicate files are present, this is used to
+    identify if some album folder is worth keeping or not.
+
+    Attributes:
+        folder (str): The path to the album folder.
+        files (dict[str, MediaFile]): A dictionary with file path as key and optional MediaFile as value.
+
+    """
+
+    CACHE: dict = {}
+    folder: str
+    album: str
+    files: dict[str, MediaFile]
+    has_keepable: bool
+
+    def __init__(self, media: MediaFile):
+        """Init instance."""
+        self.folder = FileUtil.get_folder(media.beets_path)
+        self.album = media.album_name
+        self.files = []
+        self.has_keepable = False
+
+    def missing(self) -> None:
+        """Add a file to the album folder."""
+        album_info = AlbumFolder.CACHE.get(self.folder)
+        if album_info:
+            return album_info.missing
+
+        album_info = EasyDict({"album": None, "count": None, "missing": None})
+        cmd = f'beet ls -a -f "$album:::$albumtotal:::$missing" path:"{self.folder}"'
+        PU.info(f"BEET CMD: {cmd}")
+        missing = 0
+        try:
+            result = subprocess.check_output(cmd, shell=True, text=True)
+            if result:
+                lines = result.splitlines()
+                for line in lines:
+                    result = line.split(":::")
+                    album_info.album = result[0]
+                    album_info.count = result[1]
+                    album_info.missing = result[2]
+                    album_info.missing = int(missing) if missing else 0
+
+                    PU.info(f"'{album_info.album}' ALBUM TOTAL={album_info.count} MISSING={album_info.missing}")
+            else:
+                PU.warning("Got no result from missing files check!")
+        except ValueError as ve:
+            PU.error("Error occurred while checking for missing files:" + str(ve))
+        except Exception as e:
+            PU.error("Unknown error occurred while checking for missing files:" + str(e))
+        AlbumFolder.CACHE[self.folder] = album_info
+        return album_info.missing
+
+    def is_bad(self) -> bool:
+        """Check if the artist or album folder named badly ("Unknown Artist", "Unknown Album")."""
+        artist = FileUtil.get_artist_folder(self.folder)
+        album = FileUtil.get_album_folder(self.folder)
+        bad_artist = any(name.lower() in artist.lower() for name in ToolboxConfig.BAD_FOLDER_NAMES)
+        bad_album = any(name.lower() in album.lower() for name in ToolboxConfig.BAD_FOLDER_NAMES)
+        return bad_artist or bad_album
+
+    def map_media_to_file(self, media: MediaFile):
+        """Map a media file to an existing file in the album folder."""
+        self.files[FileUtil.get_file(media.path)] = media

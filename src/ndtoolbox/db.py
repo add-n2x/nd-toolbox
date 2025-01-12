@@ -3,10 +3,12 @@ Navidrome database classes.
 """
 
 import sqlite3
+import unicodedata
 from typing import Generator
 
-from ndtoolbox.model import Album, Annotation, Artist, MediaFile
+from ndtoolbox.model import Album, AlbumFolder, Annotation, Artist, MediaFile
 from ndtoolbox.utils import DateUtil as DU
+from ndtoolbox.utils import FileUtil, ToolboxConfig
 from ndtoolbox.utils import PrintUtil as PU
 
 
@@ -55,12 +57,12 @@ class NavidromeDb:
     """
 
     db_path: str
+    config: ToolboxConfig
+    app: object
     user_id: str
-    artists: dict
-    albums: dict
     conn: NavidromeDbConnection
 
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str, config: ToolboxConfig, app):
         """
         Initialize the database connection and set the user ID.
 
@@ -68,11 +70,9 @@ class NavidromeDb:
             db_path (str): Path to the database file.
         """
         NavidromeDbConnection.db_path = db_path
+        self.config = config
+        self.app = app
         self.user_id = self.init_user()
-
-        # Initialize caches for artists and albums.
-        self.artists = {}
-        self.albums = {}
 
     def init_user(self) -> str:
         """
@@ -127,22 +127,28 @@ class NavidromeDb:
                     starred_at=None,
                 )
             # Get artist data
-            media.artist = self.artists.get(media.artist_id)
+            media.artist = self.app.data.artists.get(media.artist_id)
             media.artist = self.get_artist(media, media.artist_id, conn) if not media.artist else media.artist
             if media.artist:
-                self.artists[media.artist_id] = media.artist
+                self.app.data.artists[media.artist_id] = media.artist
             # Get album data
-            media.album = self.albums.get(media.album_id)
+            media.album = self.app.data.albums.get(media.album_id)
             media.album = self.get_album(media, media.album_id, conn) if not media.album else media.album
             if media.album:
-                self.albums[media.album_id] = media.album
+                self.app.data.albums[media.album_id] = media.album
+            # Store album folder in directories dictionary
+            dir = FileUtil.get_folder(media.path)
+            media.folder = self.app.data.directories.get(dir)
+            media.folder = AlbumFolder(media) if not media.folder else media.folder
+            self.app.data.directories[dir] = media.folder
+
         return media
 
     def get_media_batch(self, file_paths: list[str], conn: NavidromeDbConnection) -> Generator[MediaFile]:
         """Get a batch of media files by a list of file paths.
 
         Args:
-            file_paths: A list of file paths.
+            file_paths: A list of file paths in Beets format
             conn: A NavidromeDbConnection object.
 
         Returns:
@@ -154,24 +160,38 @@ class NavidromeDb:
             FROM media_file
             WHERE path IN ({})
         """.format(",".join("?" for _ in file_paths))
+        path_mapping = {}
+        for _, beets_path in enumerate(file_paths):
+            # Normalize Unicode characters in the file path. Otherwise characters like `á` (`\u0061\u0301`)
+            # and `á` (`\u00e1`) are not threaded as the same.
+            nd_path = unicodedata.normalize("NFC", beets_path)
+            # Restore the Beets prefix
+            beets_path = beets_path.replace(self.config.target_base, self.config.source_base, 1)
+            path_mapping[nd_path] = beets_path
 
         cursor = conn.cursor()
-        params = tuple(file_paths) + () * (len(file_paths) + 1)
+        params = () + tuple(file_paths) + () * (len(file_paths) + 1)
         results = cursor.execute(query, params).fetchall()
         for result in results:
             media = MediaFile(*result)
-
+            media.beets_path = path_mapping[media.path]
             # Get artist data
-            media.artist = self.artists.get(media.artist_id)
+            media.artist = self.app.data.artists.get(media.artist_id)
             media.artist = self.get_artist(media, media.artist_id, conn) if not media.artist else media.artist
             if media.artist:
-                self.artists[media.artist_id] = media.artist
+                self.app.data.artists[media.artist_id] = media.artist
 
             # Get album data
-            media.album = self.albums.get(media.album_id)
+            media.album = self.app.data.albums.get(media.album_id)
             media.album = self.get_album(media, media.album_id, conn) if not media.album else media.album
             if media.album:
-                self.albums[media.album_id] = media.album
+                self.app.data.albums[media.album_id] = media.album
+
+            # Store album folder in directories dictionary
+            dir = FileUtil.get_folder(media.path)
+            media.folder = self.app.data.directories.get(dir)
+            media.folder = AlbumFolder(media) if not media.folder else media.folder
+            self.app.data.directories[dir] = media.folder
 
             yield media
 
