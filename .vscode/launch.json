@@ -39,6 +39,24 @@
             "env": {
                 "PYTHONPATH": "${cwd}:${cwd}/src:${env:PYTHONPATH}"
             }
+        },
+        {
+            "name": "Debug: eval-deletable",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "src.ndtoolbox.app",
+            "args": [
+                "poetry",
+                "run",
+                "python",
+                "src/ndtoolbox/app/main",
+                "action=eval-deletable"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${cwd}:${cwd}/src:${env:PYTHONPATH}"
+            }
         }
     ]
 }
