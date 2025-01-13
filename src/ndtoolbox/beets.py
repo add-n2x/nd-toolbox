@@ -1,6 +1,7 @@
 """Classes for interaction with Beets."""
 
 import subprocess
+from typing import Generator
 
 from easydict import EasyDict
 
@@ -12,28 +13,28 @@ class BeetsClient:
     """Client wrapping commands for Beets."""
 
     @staticmethod
-    def get_album_info(album_path) -> EasyDict:
-        """Get album information based on given folder.
+    def get_album_info(album_path) -> Generator[EasyDict]:
+        """
+        Get album information based on given folder.
 
         Args:
             album_path (str): The path to the album folder to check.
 
         Returns:
-            EasyDict: Album information containing `album` name, `total` tracks and `missing` tracks.
+            (Generator[EasyDict]): list of album info dict containing `album` name, `total` tracks and `missing` tracks.
+                Usually it only returns one record, but can return multiple records when the folder contains
+                files from multiple albums. In that case, it will be treated as a manual compilation (mixtape).
         """
         album_info = EasyDict({"album": None, "total": None, "missing": None})
         cmd = f"beet ls -a -f '$album:::$albumtotal:::$missing' path:\"{album_path}\""
-        PU.info(f"BEET CMD: {cmd}")
+        PU.debug(f"BEET CMD: {cmd}")
 
         try:
             result = subprocess.check_output(cmd, shell=True, text=True)
-            PU.info(SU.pink(f"BEET RESULT: {result}"))
+            PU.debug(SU.pink(f"BEET RESULT: {result}"))
 
             if result:
                 lines = result.splitlines()
-                if len(lines) > 1:
-                    msg = f"Got too many lines while getting album info for '{album_path}': {result}"
-                    PU.error(msg)
                 for line in lines:
                     result = line.split(":::")
                     if len(result) != 3:
@@ -44,7 +45,7 @@ class BeetsClient:
                     album_info.album = result[0]
                     album_info.total = int(result[1])
                     album_info.missing = int(result[2])
-                    return album_info
+                    yield album_info
             else:
                 PU.warning("Got no result from missing files check!")
         except ValueError as ve:
