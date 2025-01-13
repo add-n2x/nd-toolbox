@@ -9,6 +9,7 @@ from typing import Optional
 
 from easydict import EasyDict
 
+from ndtoolbox.beets import BeetsClient
 from ndtoolbox.utils import DateUtil as DU
 from ndtoolbox.utils import FileUtil, ToolboxConfig
 from ndtoolbox.utils import PrintUtil as PU
@@ -221,6 +222,8 @@ class AlbumFolder:
     album: str
     files: dict[str, MediaFile]
     has_keepable: bool
+    is_compilation: bool
+    is_root: bool
 
     def __init__(self, media: MediaFile):
         """Init instance."""
@@ -228,37 +231,25 @@ class AlbumFolder:
         self.album = media.album_name
         self.files = []
         self.has_keepable = False
+        self.is_compilation = False
+        if self.folder == ToolboxConfig.source_base:
+            self.is_root = True
+        else:
+            self.is_root = False
 
-    def missing(self) -> None:
+    def info(self) -> None:
         """Add a file to the album folder."""
+        if self.is_root:
+            PU.warning("Root folder cannot not be processed")
+            return None
         album_info = AlbumFolder.CACHE.get(self.folder)
-        if album_info:
-            return album_info.missing
-
-        album_info = EasyDict({"album": None, "count": None, "missing": None})
-        cmd = f'beet ls -a -f "$album:::$albumtotal:::$missing" path:"{self.folder}"'
-        PU.info(f"BEET CMD: {cmd}")
-        missing = 0
-        try:
-            result = subprocess.check_output(cmd, shell=True, text=True)
-            if result:
-                lines = result.splitlines()
-                for line in lines:
-                    result = line.split(":::")
-                    album_info.album = result[0]
-                    album_info.count = result[1]
-                    album_info.missing = result[2]
-                    album_info.missing = int(missing) if missing else 0
-
-                    PU.info(f"'{album_info.album}' ALBUM TOTAL={album_info.count} MISSING={album_info.missing}")
-            else:
-                PU.warning("Got no result from missing files check!")
-        except ValueError as ve:
-            PU.error("Error occurred while checking for missing files:" + str(ve))
-        except Exception as e:
-            PU.error("Unknown error occurred while checking for missing files:" + str(e))
-        AlbumFolder.CACHE[self.folder] = album_info
-        return album_info.missing
+        if not album_info:
+            album_info = BeetsClient.get_album_info(self.folder)
+            AlbumFolder.CACHE[self.folder] = album_info
+            if not album_info:
+                PU.warning(f"Missing album info for {self.folder} >> handling as compilation")
+                self.is_compilation = True
+        return album_info
 
     def is_bad(self) -> bool:
         """Check if the artist or album folder named badly ("Unknown Artist", "Unknown Album")."""

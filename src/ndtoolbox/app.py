@@ -444,15 +444,20 @@ class DuplicateProcessor:
         PU.note(f"Compare {SU.gray(this.path)} <=> {SU.gray(that.path)}", 0)
 
         # Check completeness of album folder
-        left = this.folder.missing()
-        right = that.folder.missing()
-        PU.info(f"Compare if album folder is missing tracks: {left} || {right}", 1)
-        if left and (left > 0) or right and (right > 0):
-            if left < right:
-                PU.info(f"This folder is more complete ({left}): {SU.gray(this.path)}")
+        left = this.folder.info()
+        right = that.folder.info()
+
+        if not left:
+            PU.warning(f"Missing album info for {this.path}")
+        elif not right:
+            PU.warning(f"Missing album info for {that.path}")
+        elif left.missing and (left.missing > 0) or right and right.missing and (right.missing > 0):
+            PU.info(f"Compare if album is missing tracks: {left.missing}/{left.total} || {right.missing}/{right.total}")
+            if left.missing < right.missing:
+                PU.info(f"This folder is more complete ({left.missing}/{left.total}): {SU.gray(this.path)}")
                 return this
-            elif left > right:
-                PU.info(f"That folder is more complete ({right}): {SU.gray(that.path)}")
+            elif left.missing > right.missing:
+                PU.info(f"That folder is more complete ({right.missing}/{right.total}): {SU.gray(that.path)}")
                 return that
         # Skip if both are incomplete
 
