@@ -444,8 +444,8 @@ class DuplicateProcessor:
         PU.note(f"Compare {SU.gray(this.path)} <=> {SU.gray(that.path)}", 0)
 
         # Check completeness of album folder
-        left = this.folder.info()
-        right = that.folder.info()
+        left = this.folder.info
+        right = that.folder.info
 
         if not left:
             PU.warning(f"Missing album info for {this.path}")
@@ -462,8 +462,8 @@ class DuplicateProcessor:
         # Skip if both are incomplete
 
         # Check for bad folder names
-        left = this.folder.is_bad()
-        right = this.folder.is_bad()
+        left = this.folder.is_bad
+        right = this.folder.is_bad
         PU.info(f"Compare if artist or album folder is named badly: {left} || {right}", 1)
         if left and (left > 0) or right and (right > 0):
             if left < right:

@@ -2,6 +2,7 @@
 Model classes representing the Navidrome database.
 """
 
+import os
 import subprocess
 from datetime import datetime
 from enum import Enum
@@ -222,13 +223,18 @@ class AlbumFolder:
     album: str
     files: dict[str, MediaFile]
     has_keepable: bool
+    is_bad: bool
     is_compilation: bool
     is_root: bool
+    is_artist_root: bool
+    is_dump_folder: bool
+    info: EasyDict
 
     def __init__(self, media: MediaFile):
         """Init instance."""
         self.folder = FileUtil.get_folder(media.beets_path)
         self.album = media.album_name
+        self.info = None
         self.files = []
         self.has_keepable = False
         self.is_compilation = False
@@ -236,28 +242,45 @@ class AlbumFolder:
             self.is_root = True
         else:
             self.is_root = False
+        self.is_artist_root = len(media.beets_path.replace(ToolboxConfig.source_base, "").split(os.sep)) == 0
+        self.is_bad = self._set_is_bad()
+        self.is_dump_folder = False
 
-    def info(self) -> None:
-        """Add a file to the album folder."""
+        # For performance don't load album info for all folders
+        if not self.is_dump_folder and not self.is_artist_root and not self.is_root:
+            self._load_album_info()
+        else:
+            self.is_compilation = True
+
+    def _load_album_info(self) -> None:
+        """Load album information from Beets."""
         if self.is_root:
             PU.warning("Root folder cannot not be processed")
             return None
         album_info = AlbumFolder.CACHE.get(self.folder)
-        if not album_info:
-            album_info = BeetsClient.get_album_info(self.folder)
-            AlbumFolder.CACHE[self.folder] = album_info
-            if not album_info:
-                PU.warning(f"Missing album info for {self.folder} >> handling as compilation")
-                self.is_compilation = True
-        return album_info
+        if not album_info and not self.is_compilation:
+            infos = list(BeetsClient.get_album_info(self.folder))
 
-    def is_bad(self) -> bool:
+            if not infos:
+                # TODO Clarfiy to handle this case
+                PU.warning(f"Got no album info for {self.folder} >> clarify handling")
+                self.is_compilation = True
+            if len(infos) > 1:
+                # Folder contains files form multiples albums. So this is either a dump folder
+                # or amanually made compilation/mixtape.
+                self.is_dump_folder = True
+                PU.warning(f"Found self-made compilation, mixtape or dump folder: '{self.folder}' - {infos}")
+            elif len(infos) == 1:
+                AlbumFolder.CACHE[self.folder] = infos[0]
+        self.album_info = album_info
+
+    def _set_is_bad(self) -> bool:
         """Check if the artist or album folder named badly ("Unknown Artist", "Unknown Album")."""
         artist = FileUtil.get_artist_folder(self.folder)
         album = FileUtil.get_album_folder(self.folder)
         bad_artist = any(name.lower() in artist.lower() for name in ToolboxConfig.BAD_FOLDER_NAMES)
         bad_album = any(name.lower() in album.lower() for name in ToolboxConfig.BAD_FOLDER_NAMES)
-        return bad_artist or bad_album
+        self.is_bad = bad_artist or bad_album
 
     def map_media_to_file(self, media: MediaFile):
         """Map a media file to an existing file in the album folder."""
