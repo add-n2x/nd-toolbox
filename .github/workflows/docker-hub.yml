@@ -3,6 +3,11 @@ name: Build and Push Docker Image to Docker Hub
 on:
   push:
     branches: [ "dev", "main" ]
+    paths-ignore:
+      - 'README.md'
+      - '/docs/**'
+      - '/.vscode/**'
+      - '/test/data/navidrome.db'
   pull_request:
     branches: [ "dev", "main" ]
 
