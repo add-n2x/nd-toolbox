@@ -26,7 +26,7 @@ class BeetsClient:
                 files from multiple albums. In that case, it will be treated as a manual compilation (mixtape).
         """
         album_info = EasyDict({"album": None, "total": None, "missing": None})
-        cmd = f"beet ls -a -f '$album:::$albumtotal:::$missing' path:\"{album_path}\""
+        cmd = f"beet ls -a -f '$album:::$albumtotal:::$missing:::$comp' path:\"{album_path}\""
         PU.debug(f"BEET CMD: {cmd}")
 
         try:
@@ -37,7 +37,7 @@ class BeetsClient:
                 lines = result.splitlines()
                 for line in lines:
                     result = line.split(":::")
-                    if len(result) != 3:
+                    if len(result) != 4:
                         msg = f"Unexpected result format while getting album info for '{album_path}': {result}"
                         PU.error(msg)
                         return None
@@ -45,6 +45,7 @@ class BeetsClient:
                     album_info.album = result[0]
                     album_info.total = int(result[1])
                     album_info.missing = int(result[2])
+                    album_info.compilation = bool(result[3])
                     yield album_info
             else:
                 PU.warning("Got no result from missing files check!")

@@ -249,8 +249,6 @@ class AlbumFolder:
         # For performance don't load album info for all folders
         if not self.is_dump_folder and not self.is_artist_root and not self.is_root:
             self._load_album_info()
-        else:
-            self.is_compilation = True
 
     def _load_album_info(self) -> None:
         """Load album information from Beets."""
@@ -262,16 +260,18 @@ class AlbumFolder:
             infos = list(BeetsClient.get_album_info(self.folder))
 
             if not infos:
-                # TODO Clarfiy to handle this case
+                # TODO Clarify how to handle this case
                 PU.warning(f"Got no album info for {self.folder} >> clarify handling")
                 self.is_compilation = True
             if len(infos) > 1:
                 # Folder contains files form multiples albums. So this is either a dump folder
                 # or amanually made compilation/mixtape.
                 self.is_dump_folder = True
-                PU.warning(f"Found self-made compilation, mixtape or dump folder: '{self.folder}' - {infos}")
+                PU.warning(f"Found self-made compilation, mixtape or dump folder: '{self.folder}'")
             elif len(infos) == 1:
                 AlbumFolder.CACHE[self.folder] = infos[0]
+                self.info = infos[0]
+                self.is_compilation = self.info.compilation
         self.album_info = album_info
 
     def _set_is_bad(self) -> bool:
