@@ -14,7 +14,7 @@ It aims to maintain a well-organized music library by:
 - Avoiding the need for user interaction as much as possible
 - Offering additional helpful tools for managing your Navidrome library
 
-To set up "Navidrome Toolbox," deploy it as a Docker container alongside your existing Navidrome 
+To set up _Navidrome Toolbox_, deploy it as a Docker container alongside your existing Navidrome 
 installation.
 
 > [!IMPORTANT]
