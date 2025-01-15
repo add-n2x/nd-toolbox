@@ -10,9 +10,10 @@
 using [Beets](https://beets.io/) and custom logic. 
 
 It aims to maintain a well-organized music library by:
-- Removing duplicate tracks while preserving play counts and ratings
-- Avoiding the need for user interaction as much as possible
-- Offering additional helpful tools for managing your Navidrome library
+- Organize your Navidrome fileystem library according to MusicBrainz folder convention.
+- Removing duplicate tracks while preserving play counts and ratings.
+- Avoiding the need for user interaction as much as possible.
+- Offering additional helpful tools for managing your Navidrome library.
 
 To set up _Navidrome Toolbox_, deploy it as a Docker container alongside your existing Navidrome 
 installation.
