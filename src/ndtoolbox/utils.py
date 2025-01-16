@@ -133,10 +133,24 @@ class FileUtil:
         return folder.split(os.sep)[-1]
 
     @staticmethod
+    def is_album_folder(base_path: str, path: str) -> bool:
+        """Check if the given path is an album folder."""
+        relative_path = os.path.relpath(path, base_path)
+        folders = relative_path.split(os.sep)
+        return len(folders) == 2 and folders[1] != ""
+
+    @staticmethod
     def get_artist_folder(path: str) -> str:
         """Get artist folder from file path."""
         folder = FileUtil.get_folder(path)
         return folder.split(os.sep)[-2]
+
+    @staticmethod
+    def is_artist_folder(base_path: str, path: str) -> bool:
+        """Check if the given path is an artist folder."""
+        relative_path = os.path.relpath(path, base_path)
+        folders = relative_path.split(os.sep)
+        return len(folders) == 1 and folders[0] != ""
 
     @staticmethod
     def get_file(path: str) -> str:
