@@ -6,7 +6,7 @@ import sqlite3
 import unicodedata
 from typing import Generator
 
-from ndtoolbox.model import Album, AlbumFolder, Annotation, Artist, MediaFile
+from ndtoolbox.model import Album, Annotation, Artist, Folder, MediaFile
 from ndtoolbox.utils import DateUtil as DU
 from ndtoolbox.utils import FileUtil, ToolboxConfig
 from ndtoolbox.utils import PrintUtil as PU
@@ -139,7 +139,7 @@ class NavidromeDb:
             # Store album folder in directories dictionary
             dir = FileUtil.get_folder(media.path)
             media.folder = self.app.data.directories.get(dir)
-            media.folder = AlbumFolder(media) if not media.folder else media.folder
+            media.folder = Folder(media) if not media.folder else media.folder
             self.app.data.directories[dir] = media.folder
 
         return media
@@ -166,7 +166,7 @@ class NavidromeDb:
             # and `á` (`\u00e1`) are not threaded as the same.
             nd_path = unicodedata.normalize("NFC", beets_path)
             # Restore the Beets prefix
-            beets_path = beets_path.replace(self.config.target_base, self.config.source_base, 1)
+            beets_path = beets_path.replace(self.config.base_path_navidrome, self.config.base_path_beets, 1)
             path_mapping[nd_path] = beets_path
 
         cursor = conn.cursor()
@@ -190,7 +190,7 @@ class NavidromeDb:
             # Store album folder in directories dictionary
             dir = FileUtil.get_folder(media.path)
             media.folder = self.app.data.directories.get(dir)
-            media.folder = AlbumFolder(media) if not media.folder else media.folder
+            media.folder = Folder(media) if not media.folder else media.folder
             self.app.data.directories[dir] = media.folder
 
             yield media

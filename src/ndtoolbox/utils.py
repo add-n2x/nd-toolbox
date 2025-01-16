@@ -465,8 +465,8 @@ class ToolboxConfig:
     nd_dir: str = None
     data_folder: str = None
     music_folder: str = None
-    source_base: str = None
-    target_base: str = None
+    base_path_beets: str = None
+    base_path_navidrome: str = None
 
     def __init__(self, dry_run: bool = True):
         """Init config from environment variables."""
@@ -479,8 +479,8 @@ class ToolboxConfig:
         ToolboxConfig.navidrome_db_path = os.path.join(ToolboxConfig.nd_dir, "navidrome.db")
         ToolboxConfig.data_folder = os.getenv("DATA_DIR")
         ToolboxConfig.music_folder = os.getenv("MUSIC_DIR")
-        ToolboxConfig.source_base = os.getenv("BEETS_BASE_PATH")
-        ToolboxConfig.target_base = os.getenv("ND_BASE_PATH")
+        ToolboxConfig.base_path_beets = os.getenv("BEETS_BASE_PATH")
+        ToolboxConfig.base_path_navidrome = os.getenv("ND_BASE_PATH")
 
         # Init file paths.
         ToolboxConfig.FILE_BEETS_INPUT_JSON = os.path.join(ToolboxConfig.data_folder, "beets/beets-duplicates.json")
@@ -517,5 +517,5 @@ class ToolboxConfig:
         PrintUtil.info(f"Dry-run: {ToolboxConfig.dry_run}")
         PrintUtil.info(f"Navidrome database path: {self.navidrome_db_path}")
         PrintUtil.info(f"Output folder: {ToolboxConfig.data_folder}")
-        PrintUtil.info(f"Source base: {ToolboxConfig.source_base}")
-        PrintUtil.info(f"Target base: {ToolboxConfig.target_base}")
+        PrintUtil.info(f"Beets library root: {ToolboxConfig.base_path_beets}")
+        PrintUtil.info(f"Navidrome library root: {ToolboxConfig.base_path_navidrome}")

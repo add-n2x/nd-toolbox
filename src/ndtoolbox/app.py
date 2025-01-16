@@ -11,7 +11,7 @@ import jsonpickle
 from easydict import EasyDict
 
 from ndtoolbox.db import NavidromeDb, NavidromeDbConnection
-from ndtoolbox.model import Annotation, MediaFile
+from ndtoolbox.model import Annotation, Folder, MediaFile
 from ndtoolbox.utils import CLI, FileTools, FileUtil, Stats, ToolboxConfig
 from ndtoolbox.utils import PrintUtil as PU
 from ndtoolbox.utils import StringUtil as SU
@@ -42,8 +42,8 @@ class DuplicateProcessor:
         stats (Stats): Contains statistics about the processing of duplicate media files.
         errors (list): A list to store any errors encountered during processing.
         data_folder (str): The path to the data folder where processed files will be saved.
-        source_base (str): The base path for source media files in Beets.
-        target_base (str): The base path for target media files in Navidrome.
+        base_path_beets (str): The base path for source media files in Beets.
+        base_path_navidrome (str): The base path for target media files in Navidrome.
         start (float): The timestamp when processing started.
         stop (float): The timestamp when processing stopped. This is set at the end of an action or an error occurs.
     """
@@ -63,8 +63,8 @@ class DuplicateProcessor:
         Args:
             navidrome_db_path (str): Path to the Navidrome database file.
             data_folder (str): Path to the data folder where processed files are saved.
-            source_base (str): Paths in the JSON file are relative to this path.
-            target_base (str): The actual location in the Navidrome music library.
+            base_path_beets (str): Paths in the JSON file are relative to this path.
+            base_path_navidrome (str): The actual location in the Navidrome music library.
             dry_run (bool): If True, no actual file operations will be performed.
         """
         self.config = config
@@ -293,18 +293,18 @@ class DuplicateProcessor:
             dups_input (dict[str, list[str]]): A dictionary where the keys are duplicate identifiers and the values
                 are lists of file paths.
         """
-        if not self.config.source_base or not self.config.target_base:
+        if not self.config.base_path_beets or not self.config.base_path_navidrome:
             PU.warning("Skipping base path update, since no paths are set")
             return
-        if self.config.source_base == self.config.target_base:
+        if self.config.base_path_beets == self.config.base_path_navidrome:
             PU.warning("Skipping base path update as target equals source")
             return
 
         for paths in dups_input.values():
             item: str
             for i, item in enumerate(paths):
-                paths[i] = item.replace(self.config.source_base, self.config.target_base, 1)
-        PU.info(f"Updated all base paths from '{self.config.source_base}' to '{self.config.target_base}'.")
+                paths[i] = item.replace(self.config.base_path_beets, self.config.base_path_navidrome, 1)
+        PU.info(f"Updated all base paths from '{self.config.base_path_beets}' to '{self.config.base_path_navidrome}'.")
 
     def _query_media_data(self, dups_input: dict[str, list[str]]):
         """
@@ -330,10 +330,16 @@ class DuplicateProcessor:
                 PU.progress_bar(progress, progress_total)
                 progress += 1
 
+                # Handle excluded files
+
+                # --> Not found in Navidrome
                 if len(files) != len(batch):
                     missing_media = [f for f in files if f not in [m.path for m in batch]]
                     for file in missing_media:
                         PU.warning(msg=f"\nExcluding media file not found in Navidrome: {file}")
+
+                # --> Different release
+                # TODO
 
             PU.progress_done(progress_total)
 
@@ -443,41 +449,51 @@ class DuplicateProcessor:
         """
         PU.note(f"Compare {SU.gray(this.path)} <=> {SU.gray(that.path)}", 0)
 
-        # Check completeness of album folder
-        left = this.folder.info
-        right = that.folder.info
+        # Real album folder files are keepable over files in root, artist or dump folders
+        left: Folder = this.folder
+        right: Folder = that.folder
+        if left.beets_path != right.beets_path:
+            PU.log(f"Compare if file is in album folder: {left.type} || {right.type}", 1)
+            if left.type != right.type:
+                if left.type == Folder.Type.ALBUM:
+                    PU.log(f"This is an album folder: {SU.gray(this.folder.beets_path)}", 2)
+                    return this
+                elif right.type == Folder.Type.ALBUM:
+                    PU.log(f"That is an album folder: {SU.gray(that.folder.beets_path)}", 2)
+                    return that
+        # Skip if both are of the same path and type
 
-        if not left:
-            PU.warning(f"Missing album info for {this.path}")
-        elif not right:
-            PU.warning(f"Missing album info for {that.path}")
-        elif left.missing and (left.missing > 0) or right and right.missing and (right.missing > 0):
-            PU.info(f"Compare if album is missing tracks: {left.missing}/{left.total} || {right.missing}/{right.total}")
-            if left.missing < right.missing:
-                PU.info(f"This folder is more complete ({left.missing}/{left.total}): {SU.gray(this.path)}")
-                return this
-            elif left.missing > right.missing:
-                PU.info(f"That folder is more complete ({right.missing}/{right.total}): {SU.gray(that.path)}")
-                return that
-        # Skip if both are incomplete
-
-        # Check for bad folder names
-        left = this.folder.is_bad
-        right = this.folder.is_bad
-        PU.info(f"Compare if artist or album folder is named badly: {left} || {right}", 1)
+        # Check for dirty folders
+        left = this.folder.is_dirty
+        right = that.folder.is_dirty
+        PU.log(f"Compare dirty folders: {left} || {right}", 1)
         if left and (left > 0) or right and (right > 0):
             if left < right:
-                PU.info(f"This folder is named badly: {SU.gray(this.folder.missing())}")
-                return this
-            elif left > right:
-                PU.info(f"That folder is named badly: {SU.gray(that.folder.missing())}")
+                PU.log(f"This folder is dirty: {SU.gray(this.folder.beets_path)}", 2)
                 return that
+            elif left > right:
+                PU.log(f"That folder is dirty: {SU.gray(that.folder.beets_path)}", 2)
+                return this
         # Skip if both are incomplete
+
+        # Check completeness of album folder
+        left = this.folder
+        right = that.folder
+        if left.missing is not None and right.missing is not None:
+            PU.log(f"Compare missing tracks: {left.missing}/{left.total} || {right.missing}/{right.total}", 1)
+            if (left.missing != right.missing) and (left.missing > 0 or right.missing > 0):
+                if left.missing < right.missing:
+                    PU.log(f"This folder is more complete ({left.missing}/{left.total}): {SU.gray(this.path)}", 2)
+                    return this
+                elif left.missing > right.missing:
+                    PU.log(f"That folder is more complete ({right.missing}/{right.total}): {SU.gray(that.path)}", 2)
+                    return that
+        # Skip if both are incomplete, none has missing tracks or have no information on missing tracks
 
         # If the album folder already contains a keepable, we wanna keep all the items
         left = this.folder and this.folder.has_keepable
         right = that.folder and that.folder.has_keepable
-        PU.info(f"Compare if album folder contain a keepable: {left} || {right}", 1)
+        PU.log(f"Compare if album folder contain a keepable: {left} || {right}", 1)
         if left != right:
             if left:
                 that.delete_reason = f"Other album folder already contains a keepable | {SU.gray(this.path)}"
@@ -490,7 +506,7 @@ class DuplicateProcessor:
         # If file paths are equal, except one contains a numeric suffix, keep the other
         left = FileUtil.equal_file_with_numeric_suffix(this.path, that.path)
         right = FileUtil.equal_file_with_numeric_suffix(that.path, this.path)
-        PU.info(f"Compare paths with numeric suffix: {right} || {left}", 1)
+        PU.log(f"Compare paths with numeric suffix: {right} || {left}", 1)
         if left or right:
             if left:
                 that.delete_reason = f"File has a numeric suffix (seems to be a copy) | {SU.gray(this.path)}"
@@ -503,7 +519,7 @@ class DuplicateProcessor:
         # Having a preferred file extension is keepable
         left = this.path.split(".")[-1].lower() in ToolboxConfig.pref_extensions
         right = that.path.split(".")[-1].lower() in ToolboxConfig.pref_extensions
-        PU.info(f"Compare if file extension is keepable: {left} || {right}", 1)
+        PU.log(f"Compare if file extension is keepable: {left} || {right}", 1)
         if left != right:
             if left:
                 that.delete_reason = f"Other file has a preferred extension | {SU.gray(this.path)}"
@@ -516,7 +532,7 @@ class DuplicateProcessor:
         # Having a MusicBrainz recording ID is keepable
         left = this.mbz_recording_id is not None
         right = that.mbz_recording_id is not None
-        PU.info(f"Compare MusicBrainz recording ID: {left} || {right}", 1)
+        PU.log(f"Compare MusicBrainz recording ID: {left} || {right}", 1)
         if left != right:
             if left:
                 that.delete_reason = f"Other file has a MusicBrainz recording ID | {SU.gray(this.path)}"
@@ -529,7 +545,7 @@ class DuplicateProcessor:
         # Having artist record in Navidrome is keepable
         left = this.artist is not None
         right = that.artist is not None
-        PU.info(f"Artist record available: {left} || {right}", 1)
+        PU.log(f"Artist record available: {left} || {right}", 1)
         if left != right:
             if left:
                 that.delete_reason = f"Other file has an artist record in Navidrome | {SU.gray(this.path)}"
@@ -542,7 +558,7 @@ class DuplicateProcessor:
         # Having MusicBrainz album ID in Navidrome is keepable
         left = this.album.mbz_album_id if this.album else None
         right = that.album.mbz_album_id if that.album else None
-        PU.info(f"MusicBrainz Album ID available: {left} || {right}", 1)
+        PU.log(f"MusicBrainz Album ID available: {left} || {right}", 1)
         if left != right:
             if left:
                 that.delete_reason = f"Other file has a MusicBrainz album ID | {SU.gray(this.path)}"
@@ -555,7 +571,7 @@ class DuplicateProcessor:
         # Having track numbers is keepable
         left = this.track_number > 0
         right = that.track_number > 0
-        PU.info(f"Compare track numbers: {left} || {right}", 1)
+        PU.log(f"Compare track numbers: {left} || {right}", 1)
         if left != right:
             if left:
                 that.delete_reason = f"Other file has a track number | {SU.gray(this.path)}"
@@ -568,7 +584,7 @@ class DuplicateProcessor:
         # Higher bitrate is keepable
         left = this.bitrate
         right = that.bitrate
-        PU.info(f"Compare bitrate: {left} || {right}", 1)
+        PU.log(f"Compare bitrate: {left} || {right}", 1)
         if left > right:
             that.delete_reason = f"Other file has a higher bitrate | {SU.gray(this.path)}"
             return this
@@ -580,7 +596,7 @@ class DuplicateProcessor:
         # Year info is keepable
         left = this.year and this.year > 0
         right = that.year and that.year > 0
-        PU.info(f"Compare year info: {left} || {right}", 1)
+        PU.log(f"Compare year info: {left} || {right}", 1)
         if left != right:
             if left:
                 that.delete_reason = f"Other file has a year info | {SU.gray(this.path)}"
@@ -593,7 +609,7 @@ class DuplicateProcessor:
         # If the filename is closer to the track title, it is keepable
         left = FileUtil.fuzzy_match_track(this.path, this)
         right = FileUtil.fuzzy_match_track(that.path, that)
-        PU.info(f"Fuzzy match filename and track title: {left} || {right}", 1)
+        PU.log(f"Fuzzy match filename and track title: {left} || {right}", 1)
         if left != right:
             if left > right:
                 that.delete_reason = f"Other file is closer to the track title | {SU.gray(this.path)}"
@@ -606,7 +622,7 @@ class DuplicateProcessor:
         # If the album folder is closer to the album name, it is keepable
         left = FileUtil.fuzzy_match_album(FileUtil.get_album_folder(this.path), this)
         right = FileUtil.fuzzy_match_album(FileUtil.get_album_folder(that.path), that)
-        PU.info(f"Fuzzy match album name: {left} || {right}", 1)
+        PU.log(f"Fuzzy match album name: {left} || {right}", 1)
         if left != right:
             if left > right:
                 that.delete_reason = f"Other album folder is closer to the album name  | {SU.gray(this.path)}"
