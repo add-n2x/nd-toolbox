@@ -222,9 +222,10 @@ class Folder:
         ROOT = "root"
         ARTIST = "artist"
         ALBUM = "album"
+        UNKNOWN = "unknown"
 
     CACHE: dict = {}
-    path: str
+    beets_path: str
     type: Type
     album: str
     files: dict[str, MediaFile]
@@ -250,11 +251,13 @@ class Folder:
         self.type = Folder.Type.ALBUM
         if self.beets_path == ToolboxConfig.base_path_beets:
             self.type = Folder.Type.ROOT
-        elif len(media.beets_path.replace(ToolboxConfig.base_path_beets, "").split(os.sep)) == 0:
+        elif FileUtil.is_artist_folder(ToolboxConfig.base_path_beets, self.beets_path):
             self.type = Folder.Type.ARTIST
-        else:
-            # FIXME This should be handled in a better way
+        elif FileUtil.is_album_folder(ToolboxConfig.base_path_beets, self.beets_path):
             self.type = Folder.Type.ALBUM
+        else:
+            self.type = Folder.Type.UNKNOWN
+            PU.warning(f"Found unknown folder type for {self.beets_path}")
 
         # For performance reasons, we don't load album info for all folders
         if (
@@ -301,3 +304,11 @@ class Folder:
     def map_media_to_file(self, media: MediaFile):
         """Map a media file to an existing file in the album folder."""
         self.files[FileUtil.get_file(media.path)] = media
+
+    def __repr__(self) -> str:
+        """String representation of the Folder object."""
+        return f"Folder({self.beets_path}, \
+            is_dirty: {self.is_dirty}, \
+            has_keepable: {self.has_keepable}, \
+            {len(self.files)} files, \
+            missing: {self.missing}/|{self.total})"
