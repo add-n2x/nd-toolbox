@@ -475,6 +475,7 @@ class ToolboxConfig:
     logger: logging.Logger = None
     pref_extensions: list = None
     remove_extensions: list = None
+    beets_db_path: str = None
     navidrome_db_path: str = None
     nd_dir: str = None
     data_folder: str = None
@@ -492,6 +493,7 @@ class ToolboxConfig:
         ToolboxConfig.nd_dir = os.getenv("ND_DIR")
         ToolboxConfig.navidrome_db_path = os.path.join(ToolboxConfig.nd_dir, "navidrome.db")
         ToolboxConfig.data_folder = os.getenv("DATA_DIR")
+        ToolboxConfig.beets_db_path = os.path.join(ToolboxConfig.data_folder, "beets/libary.db")
         ToolboxConfig.music_folder = os.getenv("MUSIC_DIR")
         ToolboxConfig.base_path_beets = os.getenv("BEETS_BASE_PATH")
         ToolboxConfig.base_path_navidrome = os.getenv("ND_BASE_PATH")
