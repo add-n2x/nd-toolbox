@@ -448,6 +448,7 @@ class DuplicateProcessor:
 
         """
         PU.note(f"Compare {SU.gray(this.path)} <=> {SU.gray(that.path)}", 0)
+        PU.note(f"This folder: {SU.gray(this.folder)}, That folder: {SU.gray(that.folder)}")
 
         # Real album folder files are keepable over files in root, artist or dump folders
         left: Folder = this.folder
@@ -456,10 +457,14 @@ class DuplicateProcessor:
             PU.log(f"Compare if file is in album folder: {left.type} || {right.type}", 1)
             if left.type != right.type:
                 if left.type == Folder.Type.ALBUM:
-                    PU.log(f"This is an album folder: {SU.gray(this.folder.beets_path)}", 2)
+                    msg = f"Other is an album folder: {SU.gray(this.folder.beets_path)}"
+                    PU.log(msg, 2)
+                    that.delete_reason = msg
                     return this
                 elif right.type == Folder.Type.ALBUM:
-                    PU.log(f"That is an album folder: {SU.gray(that.folder.beets_path)}", 2)
+                    msg = f"Other is an album folder: {SU.gray(that.folder.beets_path)}"
+                    PU.log(msg, 2)
+                    this.delete_reason = msg
                     return that
         # Skip if both are of the same path and type
 
@@ -467,12 +472,16 @@ class DuplicateProcessor:
         left = this.folder.is_dirty
         right = that.folder.is_dirty
         PU.log(f"Compare dirty folders: {left} || {right}", 1)
-        if left and (left > 0) or right and (right > 0):
-            if left < right:
-                PU.log(f"This folder is dirty: {SU.gray(this.folder.beets_path)}", 2)
+        if left != right:
+            if left:
+                msg = f"This folder is dirty: {SU.gray(this.folder.beets_path)}"
+                PU.log(msg, 2)
+                this.delete_reason = msg
                 return that
-            elif left > right:
-                PU.log(f"That folder is dirty: {SU.gray(that.folder.beets_path)}", 2)
+            elif right:
+                msg = f"That folder is dirty: {SU.gray(that.folder.beets_path)}"
+                PU.log(msg, 2)
+                that.delete_reason = msg
                 return this
         # Skip if both are incomplete
 
@@ -482,23 +491,29 @@ class DuplicateProcessor:
         if left.missing is not None and right.missing is not None:
             PU.log(f"Compare missing tracks: {left.missing}/{left.total} || {right.missing}/{right.total}", 1)
             if (left.missing != right.missing) and (left.missing > 0 or right.missing > 0):
-                if left.missing < right.missing:
-                    PU.log(f"This folder is more complete ({left.missing}/{left.total}): {SU.gray(this.path)}", 2)
+                if (left.missing < right.missing) and not left.is_dirty:
+                    msg = f"Other folder is more complete ({left.missing}/{left.total}): {SU.gray(this.path)}"
+                    PU.log(msg, 2)
+                    that.delete_reason = msg
                     return this
-                elif left.missing > right.missing:
-                    PU.log(f"That folder is more complete ({right.missing}/{right.total}): {SU.gray(that.path)}", 2)
+                elif (left.missing > right.missing) and not right.is_dirty:
+                    msg = f"Other folder is more complete ({right.missing}/{right.total}): {SU.gray(that.path)}"
+                    PU.log(msg, 2)
+                    this.delete_reason = msg
                     return that
         # Skip if both are incomplete, none has missing tracks or have no information on missing tracks
 
-        # If the album folder already contains a keepable, we wanna keep all the items
+        # If the album folder already contains a keepable, we wanna keep all the items, except for dirty folders
         left = this.folder and this.folder.has_keepable
+        l_dirty = this.folder and this.folder.is_dirty
         right = that.folder and that.folder.has_keepable
-        PU.log(f"Compare if album folder contain a keepable: {left} || {right}", 1)
+        r_dirty = that.folder and that.folder.is_dirty
+        PU.log(f"Compare if album folder contain a keepable: {left} +dirty: {l_dirty}  || {right} +dirty: {r_dirty}", 1)
         if left != right:
-            if left:
+            if left and not l_dirty:
                 that.delete_reason = f"Other album folder already contains a keepable | {SU.gray(this.path)}"
                 return this
-            elif right:
+            elif right and not r_dirty:
                 this.delete_reason = f"Other album folder already contains a keepable | {SU.gray(that.path)}"
                 return that
         # Skip, if they are the same
@@ -652,6 +667,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     processor = DuplicateProcessor(config)
+    # client = BeetsClient(config)
+    # print("BEETS CLIENT: " + client._query1())
 
     if action == "remove-unsupported":
         FileTools.move_by_extension(config.music_dir, config.data_dir, config.remove_extensions, ToolboxConfig.dry_run)

@@ -260,12 +260,7 @@ class Folder:
             PU.warning(f"Found unknown folder type for {self.beets_path}")
 
         # For performance reasons, we don't load album info for all folders
-        if (
-            not self.is_dirty
-            and not self.beets_album
-            and not self.type == Folder.Type.ROOT
-            and not self.type == Folder.Type.ARTIST
-        ):
+        if not self.is_dirty and not self.beets_album and not self.type == Folder.Type.ROOT:
             self._load_album_info()
 
         # Check if folder is dirty
@@ -288,22 +283,25 @@ class Folder:
 
         if not infos:
             # TODO Clarify how to handle this case
+            # self.is_dirty = True
+            self.type = Folder.Type.UNKNOWN
             PU.warning(f"Got no album info for {self.beets_path} > clarify handling")
-            self.is_dirty = True
-        if len(infos) > 1:
+        elif len(infos) > 1:
             # Folder contains files form multiples albums. So this is either a dump folder
             # or amanually made compilation/mixtape.
             self.is_dirty = True
+            self.type = Folder.Type.UNKNOWN
             PU.warning(f"Found self-made compilation, mixtape or dump folder: '{self.beets_path}'")
         elif len(infos) == 1:
             self.beets_album = infos[0].album
             self.total = infos[0].total
             self.missing = infos[0].missing
             self.is_compilation = infos[0].compilation
+            self.type = Folder.Type.ALBUM
 
-    def map_media_to_file(self, media: MediaFile):
-        """Map a media file to an existing file in the album folder."""
-        self.files[FileUtil.get_file(media.path)] = media
+    # def map_media_to_file(self, media: MediaFile):
+    #     """Map a media file to an existing file in the album folder."""
+    #     self.files[FileUtil.get_file(media.path)] = media
 
     def __repr__(self) -> str:
         """String representation of the Folder object."""
