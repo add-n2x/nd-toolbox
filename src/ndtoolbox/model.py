@@ -2,14 +2,14 @@
 Model classes representing the Navidrome database.
 """
 
-import os
 from datetime import datetime
 from enum import Enum
 from typing import Optional
 
 from ndtoolbox.beets import BeetsClient
+from ndtoolbox.config import config
 from ndtoolbox.utils import DateUtil as DU
-from ndtoolbox.utils import FileUtil, ToolboxConfig
+from ndtoolbox.utils import FileUtil
 from ndtoolbox.utils import PrintUtil as PU
 
 
@@ -249,11 +249,11 @@ class Folder:
 
         # Set folder type
         self.type = Folder.Type.ALBUM
-        if self.beets_path == ToolboxConfig.base_path_beets:
+        if self.beets_path == config["beets"]["base-path"].get(str):
             self.type = Folder.Type.ROOT
-        elif FileUtil.is_artist_folder(ToolboxConfig.base_path_beets, self.beets_path):
+        elif FileUtil.is_artist_folder(config["beets"]["base-path"].get(str), self.beets_path):
             self.type = Folder.Type.ARTIST
-        elif FileUtil.is_album_folder(ToolboxConfig.base_path_beets, self.beets_path):
+        elif FileUtil.is_album_folder(config["base-path"].get(str), self.beets_path):
             self.type = Folder.Type.ALBUM
         else:
             self.type = Folder.Type.UNKNOWN

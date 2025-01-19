@@ -6,9 +6,10 @@ import sqlite3
 import unicodedata
 from typing import Generator
 
+from ndtoolbox.config import config
 from ndtoolbox.model import Album, Annotation, Artist, Folder, MediaFile
 from ndtoolbox.utils import DateUtil as DU
-from ndtoolbox.utils import FileUtil, ToolboxConfig
+from ndtoolbox.utils import FileUtil
 from ndtoolbox.utils import PrintUtil as PU
 
 
@@ -57,12 +58,11 @@ class NavidromeDb:
     """
 
     db_path: str
-    config: ToolboxConfig
     app: object
     user_id: str
     conn: NavidromeDbConnection
 
-    def __init__(self, db_path: str, config: ToolboxConfig, app):
+    def __init__(self, db_path: str, app):
         """
         Initialize the database connection and set the user ID.
 
@@ -70,7 +70,6 @@ class NavidromeDb:
             db_path (str): Path to the database file.
         """
         NavidromeDbConnection.db_path = db_path
-        self.config = config
         self.app = app
         self.user_id = self.init_user()
 
@@ -166,7 +165,9 @@ class NavidromeDb:
             # and `á` (`\u00e1`) are not threaded as the same.
             nd_path = unicodedata.normalize("NFC", beets_path)
             # Restore the Beets prefix
-            beets_path = beets_path.replace(self.config.base_path_navidrome, self.config.base_path_beets, 1)
+            beets_path = beets_path.replace(
+                config["navidrome"]["base-path"].get(str), config["beets"]["base-path"].get(str), 1
+            )
             path_mapping[nd_path] = beets_path
 
         cursor = conn.cursor()

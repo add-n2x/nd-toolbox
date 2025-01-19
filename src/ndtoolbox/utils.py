@@ -3,17 +3,15 @@ Utility classes and functions for the ndtoolbox package.
 """
 
 import glob
-import logging
 import os
 import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
 
-import colorlog
-import tomli
-from dotenv import find_dotenv, load_dotenv
 from fuzzywuzzy import fuzz
+
+from ndtoolbox.config import config
 
 
 class Stats:
@@ -290,7 +288,7 @@ class PrintUtil:
         """Print a ASCII line with optional length."""
         c = "─" if not thick else "━"
         PrintUtil.print(c * 80)
-        ToolboxConfig.logger.info(c * 80)
+        config.logger.info(c * 80)
 
     @staticmethod
     def bold(msg, lvl=0, log=True):
@@ -298,7 +296,7 @@ class PrintUtil:
         msg = StringUtil.bold(msg)
         PrintUtil.print(PrintUtil.indent(msg, lvl))
         if log:
-            ToolboxConfig.logger.info(msg)
+            config.logger.info(msg)
 
     @staticmethod
     def underline(msg, lvl=0, log=True):
@@ -306,42 +304,42 @@ class PrintUtil:
         msg = StringUtil.underline(msg)
         PrintUtil.print(PrintUtil.indent(msg, lvl))
         if log:
-            ToolboxConfig.logger.info(msg)
+            config.logger.info(msg)
 
     @staticmethod
     def info(msg, lvl=0, log=True, end="\n"):
         """Print normal text with indentation based on level."""
         PrintUtil.print(PrintUtil.indent(msg, lvl), end=end)
         if log:
-            ToolboxConfig.logger.info(PrintUtil.indent(msg, lvl))
+            config.logger.info(PrintUtil.indent(msg, lvl))
 
     @staticmethod
     def error(msg, lvl=0):
         """Print red text with indentation based on level."""
         msg = StringUtil.red(msg)
         PrintUtil.print(PrintUtil.indent(msg, lvl))
-        ToolboxConfig.logger.error(msg)
+        config.logger.error(msg)
 
     @staticmethod
     def success(msg, lvl=0):
         """Print green text with indentation based on level."""
         msg = StringUtil.green(msg)
         PrintUtil.print(PrintUtil.indent(msg, lvl))
-        ToolboxConfig.logger.info(msg)
+        config.logger.info(msg)
 
     @staticmethod
     def warning(msg, lvl=0):
         """Print orange text with indentation based on level."""
         msg = StringUtil.orange(msg)
         PrintUtil.print(PrintUtil.indent(msg, lvl))
-        ToolboxConfig.logger.warning(msg)
+        config.logger.warning(msg)
 
     @staticmethod
     def note(msg, lvl=0):
         """Print note text with indentation based on level."""
         msg = StringUtil.blue(msg)
         PrintUtil.print(PrintUtil.indent(msg, lvl))
-        ToolboxConfig.logger.info(msg)
+        config.logger.info(msg)
 
     @staticmethod
     def print(msg, log=True, end="\n"):
@@ -352,19 +350,19 @@ class PrintUtil:
         print(msg, end)
         PrintUtil.move_cursor_to_line(terminal_height)
         sys.stdout.flush()
-        ToolboxConfig.logger.info(msg)
+        config.logger.info(msg)
 
     @staticmethod
     def log(msg, lvl=0):
         """Log info message with indentation based on level."""
         msg = PrintUtil.indent(msg, lvl)
-        ToolboxConfig.logger.info(msg)
+        config.logger.info(msg)
 
     @staticmethod
     def debug(msg, lvl=0):
         """Debug log message."""
         msg = PrintUtil.indent(msg, lvl)
-        ToolboxConfig.logger.debug(msg)
+        config.logger.debug(msg)
 
     @staticmethod
     def get_terminal_height():
@@ -458,80 +456,3 @@ class FileTools:
                 PrintUtil.info(f"[dry-run: {dry}] Move {abs_file} to {abs_target_dir}", 2)
                 if not dry:
                     shutil.move(abs_file, abs_target_dir)
-
-
-class ToolboxConfig:
-    """
-    Configuration class for ND Toolbox.
-    """
-
-    FILE_BEETS_INPUT_JSON: str
-    FILE_TOOLBOX_DATA_JSON: str
-    ERROR_REPORT_JSON: str
-    BAD_FOLDER_NAMES: list = ["unknown artist", "unknown album"]
-
-    timezone: str = None
-    dry_run: bool = None
-    logger: logging.Logger = None
-    pref_extensions: list = None
-    remove_extensions: list = None
-    beets_db_path: str = None
-    navidrome_db_path: str = None
-    nd_dir: str = None
-    data_folder: str = None
-    music_folder: str = None
-    base_path_beets: str = None
-    base_path_navidrome: str = None
-
-    def __init__(self, dry_run: bool = True):
-        """Init config from environment variables."""
-        load_dotenv(find_dotenv())
-        ToolboxConfig.timezone = os.getenv("TZ", "UTC")
-        ToolboxConfig.dry_run = False if os.getenv("DRY_RUN").lower() == "false" else True
-        ToolboxConfig.pref_extensions = os.getenv("PREFERRED_EXTENSIONS").split(" ")
-        ToolboxConfig.remove_extensions = os.getenv("UNSUPPORTED_EXTENSIONS").split(" ")
-        ToolboxConfig.nd_dir = os.getenv("ND_DIR")
-        ToolboxConfig.navidrome_db_path = os.path.join(ToolboxConfig.nd_dir, "navidrome.db")
-        ToolboxConfig.data_folder = os.getenv("DATA_DIR")
-        ToolboxConfig.beets_db_path = os.path.join(ToolboxConfig.data_folder, "beets/libary.db")
-        ToolboxConfig.music_folder = os.getenv("MUSIC_DIR")
-        ToolboxConfig.base_path_beets = os.getenv("BEETS_BASE_PATH")
-        ToolboxConfig.base_path_navidrome = os.getenv("ND_BASE_PATH")
-
-        # Init file paths.
-        ToolboxConfig.FILE_BEETS_INPUT_JSON = os.path.join(ToolboxConfig.data_folder, "beets/beets-duplicates.json")
-        ToolboxConfig.FILE_TOOLBOX_DATA_JSON = os.path.join(ToolboxConfig.data_folder, "nd-toolbox-data.json")
-        ToolboxConfig.ERROR_REPORT_JSON = os.path.join(ToolboxConfig.data_folder, "nd-toolbox-error.json")
-
-        # Setup logger
-        log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-        if log_level not in logging._nameToLevel:
-            raise ValueError(f"Invalid LOG_LEVEL: {log_level}")
-        log_file = os.path.join(ToolboxConfig.data_folder, "nd-toolbox.log")
-        ToolboxConfig.logger = colorlog.getLogger("ndtoolbox")
-
-        colorlog.basicConfig(
-            filename=log_file,
-            filemode="w",
-            encoding="utf-8",
-            level=log_level,
-            format="%(log_color)s %(msecs)d %(name)s %(levelname)s %(message)s",
-        )
-        PrintUtil.info(f"Initialized logger with level: {log_level} and log file: {log_file}")
-
-        # Print app version
-        with open("pyproject.toml", mode="rb") as file:
-            data = tomli.load(file)
-            version = data["tool"]["poetry"]["version"]
-            PrintUtil.ln()
-            PrintUtil.bold(f"  NAVIDROME TOOLBOX v{version}")
-            PrintUtil.ln()
-
-        # Print config details
-        PrintUtil.bold("\nInitializing configuration")
-        PrintUtil.ln()
-        PrintUtil.info(f"Dry-run: {ToolboxConfig.dry_run}")
-        PrintUtil.info(f"Navidrome database path: {self.navidrome_db_path}")
-        PrintUtil.info(f"Output folder: {ToolboxConfig.data_folder}")
-        PrintUtil.info(f"Beets library root: {ToolboxConfig.base_path_beets}")
-        PrintUtil.info(f"Navidrome library root: {ToolboxConfig.base_path_navidrome}")

@@ -1,0 +1,19 @@
+
+# Heartbeets Configuration
+
+timezone: Europe/Vienna
+log-level: INFO
+dry-run: True
+pref-extensions: [mp3, flac]
+remove-extensions: [m4a, wma]
+data: ./data
+music: ./music
+
+beets:
+  config: ./config/beets/docker.config.yaml
+  database: ./data/beets/library.db
+  base-path: ./music
+
+navidrome:
+  database: ./navidrome/navidrome.db
+  base-path: ./music/library
