@@ -14,8 +14,10 @@ class Config(confuse.Configuration):
 
     logger: logging.Logger = None
 
-    def init(self):
+    def __init__(self, app_name: str):
         """Init configuration."""
+        super().__init__(app_name)
+        super().set_file("config/config.yaml")
         dir_data = self["data"].get(str)
         file_duplicates_json = os.path.join(dir_data, "beets/beets-duplicates.json")
         file_data_json = os.path.join(dir_data, "nd-toolbox-data.json")
@@ -29,6 +31,7 @@ class Config(confuse.Configuration):
                 "file-log": file_log,
             }
         )
+        self.init_logger()
 
     def init_logger(self):
         """Setup logger."""
@@ -49,6 +52,3 @@ class Config(confuse.Configuration):
 
 
 config = Config("Heartbeets")
-config.set_file("config/config.yaml")
-config.init()
-config.init_logger()
