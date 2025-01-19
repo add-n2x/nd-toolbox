@@ -22,6 +22,7 @@ tomli = "^2.2.1"
 easydict = "^1.13"
 fuzzywuzzy = "^0.18.0"
 python-levenshtein = "^0.26.1"
+confuse = "^2.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
