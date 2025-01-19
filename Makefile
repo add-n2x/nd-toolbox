@@ -81,7 +81,7 @@ dev.test::
 	poetry run pytest -s
 dev.create-test-db::
 	rm test/data/navidrome.db
-	sqlite3 config/navidrome/navidrome.db '.schema --nosys' > tmp/schema.sql
+	sqlite3 navidrome/navidrome.db '.schema --nosys' > tmp/schema.sql
 	sqlite3 test/data/navidrome.db < tmp/schema.sql
 	@echo Now connect to db and run 'INSERT INTO user VALUES('b67d5135-cf67-4544-8013-d0f7c2d8a65a','test','Test User','','xx+aaaa/bb/ccccc+dddd/eee==',1,'2024-12-12 12:12:12.12+00:00',NULL,'2024-12-12 12:12:12.12+00:00','2020-20-20T10:20:20.20');'
 
@@ -95,7 +95,7 @@ docker.build::
 		.
 docker.run::
 	docker run --rm -it  \
-		-v ./config/navidrome:/navidrome  \
+		-v ./navidrome:/navidrome  \
 		-v ./music:/music  \
 		-v ./data:/data  \
 		-e TZ=${TIMEZONE} \

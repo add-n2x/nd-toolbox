@@ -3,8 +3,8 @@
 /config/beets/**/*
 !/config/beets/dev.config.yaml
 !/config/beets/docker.config.yaml
-/config/navidrome/**
-!/config/navidrome/.gitkeep
+/navidrome/**
+!/navidrome/.gitkeep
 /music
 /data/**
 !/data/.gitkeep
