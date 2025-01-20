@@ -1,0 +1,21 @@
+
+# Heartbeets Test Configuration
+
+timezone: Europe/Vienna
+log-level: INFO
+dry-run: True
+pref-extensions: [mp3, flac]
+remove-extensions: [m4a, wma]
+data: ./test/data
+music: ./music
+
+beets:
+  config: ./test/config/beets/config.yaml
+  database: ./test/data/beets/library.db
+  base-path: /music
+
+navidrome:
+  database: ./test/data/navidrome.db
+  base-path: /music/library
+
+
