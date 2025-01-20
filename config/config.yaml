@@ -12,8 +12,8 @@ music: ./music
 beets:
   config: ./config/beets/docker.config.yaml
   database: ./data/beets/library.db
-  base-path: ./music
+  base-path: /music
 
 navidrome:
   database: ./navidrome/navidrome.db
-  base-path: ./music/library
+  base-path: /music/library
