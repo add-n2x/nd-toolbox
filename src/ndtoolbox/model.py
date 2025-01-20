@@ -117,7 +117,7 @@ class MediaFile:
 
     Attributes:
        id (str): The unique identifier of the media file.
-       path (str): The file path of the media file.
+       path (str): The file path of the media file in Navidrome.
        beets_path (str): The file path of the media file in Beets.
        title (str): The title of the media file.
        year (int): The release year of the media file.
@@ -139,7 +139,7 @@ class MediaFile:
     id: str
     path: str
     beets_path: str
-    folder: object
+    folder: "Folder"
     title: str
     year: int
     track_number: int
@@ -253,7 +253,7 @@ class Folder:
             self.type = Folder.Type.ROOT
         elif FileUtil.is_artist_folder(config["beets"]["base-path"].get(str), self.beets_path):
             self.type = Folder.Type.ARTIST
-        elif FileUtil.is_album_folder(config["base-path"].get(str), self.beets_path):
+        elif FileUtil.is_album_folder(config["beets"]["base-path"].get(str), self.beets_path):
             self.type = Folder.Type.ALBUM
         else:
             self.type = Folder.Type.UNKNOWN

@@ -5,6 +5,7 @@ This module provides functionality to process duplicate media files.
 import json
 import os
 import sys
+import unicodedata
 from datetime import datetime
 
 import jsonpickle
@@ -19,7 +20,7 @@ from ndtoolbox.utils import PrintUtil as PU
 from ndtoolbox.utils import StringUtil as SU
 
 
-class DuplicateData:
+class DataCache:
     """Cache for objects to process duplicates and their relations."""
 
     directories: dict
@@ -27,12 +28,18 @@ class DuplicateData:
     albums: dict
     media: dict
 
-    def __init__(self):
+    def __init__(self, data: dict = None):
         """Init cache."""
-        self.directories = {}
-        self.artists = {}
-        self.albums = {}
-        self.media = {}
+        if data is None:
+            self.directories = {}
+            self.artists = {}
+            self.albums = {}
+            self.media = {}
+        else:
+            self.directories = data["directories"]
+            self.artists = data["artists"]
+            self.albums = data["albums"]
+            self.media = data["media"]
 
 
 class DuplicateProcessor:
@@ -51,7 +58,7 @@ class DuplicateProcessor:
     """
 
     db: NavidromeDb
-    data: DuplicateData
+    data: DataCache
     stats: Stats
     errors: list
 
@@ -69,10 +76,10 @@ class DuplicateProcessor:
             dry_run (bool): If True, no actual file operations will be performed.
         """
         # self.config = config
-        self.data = DuplicateData()
+        self.data = DataCache()
         self.errors = []
         navidrome_db = config["navidrome"]["database"].get(str)
-        self.db = NavidromeDb(navidrome_db, self)
+        self.db = NavidromeDb(navidrome_db, self.data)
         self.stats = Stats(self)
 
     def merge_and_store_annotations(self):
@@ -170,8 +177,8 @@ class DuplicateProcessor:
         PU.info(f"Reading duplicates from Beets JSON file: {config["FILE_BEETS_INPUT_JSON"].get(str)}")
         # Read the input JSON file containing duplicate media files references from Beets.
         with open(config["FILE_BEETS_INPUT_JSON"].get(str), "r", encoding="utf-8") as file:
-            dups_input = json.load(file)
-        if not dups_input:
+            beets_dups = json.load(file)
+        if not beets_dups:
             PU.error(f"No duplicates found in input file '{config["FILE_BEETS_INPUT_JSON"].get(str)}'")
             PU.info("Please generate the duplicates info using Beets `duplicatez` plugin first.")
             sys.exit(1)
@@ -183,11 +190,11 @@ class DuplicateProcessor:
             CLI.ask_continue()
 
         # Load data.
-        self._replace_base_path(dups_input)
-        self._query_media_data(dups_input)
+        mapped_paths = self._build_path_mapping(beets_dups)
+        self._query_media_data(mapped_paths)
 
         # Persist data.
-        data = {"dups_media_files": self.data.media, "stats": self.stats, "cache": self.data}
+        data = {"stats": self.stats, "cache": self.data}
         with open(config["FILE_TOOLBOX_DATA_JSON"].get(str), "w", encoding="utf-8") as file:
             file.write(jsonpickle.encode(data, indent=4, keys=True))
         PU.success(f"Stored Navidrome data to '{config["FILE_TOOLBOX_DATA_JSON"].get(str)}'")
@@ -216,14 +223,11 @@ class DuplicateProcessor:
         # Load data from JSON file.
         with open(config["FILE_TOOLBOX_DATA_JSON"].get(str), "r", encoding="utf-8") as file:
             data = jsonpickle.decode(file.read())
-            self.data.media = data["dups_media_files"]
             self.stats = data["stats"]
             self.data = data["cache"]
             PU.success(f"Loaded duplicate records from '{config["FILE_TOOLBOX_DATA_JSON"].get(str)}'")
 
-    def _split_duplicates_by_album_folder(
-        self, dups_media_files: dict[str, list[MediaFile]]
-    ) -> dict[str, list[MediaFile]]:
+    def _split_duplicates_by_album_folder(self, duplicates: dict[str, list[MediaFile]]) -> dict[str, list[MediaFile]]:
         """
         Split duplicates from different MusicBrainz albums, since they are not seen as duplicates.
         """
@@ -231,7 +235,7 @@ class DuplicateProcessor:
         PU.ln()
         # Initialize dictionary to hold duplicates grouped by album ID or MusicBrainz album ID.
         album_dups: dict[str, list[MediaFile]] = EasyDict({})
-        for _, dups in dups_media_files.items():
+        for _, dups in duplicates.items():
             dup: MediaFile
             for dup in dups:
                 album_folder = FileUtil.get_folder(dup.path)
@@ -285,34 +289,29 @@ class DuplicateProcessor:
             PU.log(f"\nDeletable: {removed}", 1)
             return self._get_keepable_media(child_dups)
 
-    def _replace_base_path(self, dups_input: dict[str, list[MediaFile]]):
+    def _build_path_mapping(self, beets_dups: dict[str, list[str]]) -> dict[str, dict]:
         """
-        Replace the music library base location with the actual location.
-
-        This is required since the base paths of files may differ between the Beets and Navidrome library.
+        Creates a path mapping between Beets and Navidrome paths.
 
         Args:
-            dups_input (dict[str, list[str]]): A dictionary where the keys are duplicate identifiers and the values
-                are lists of file paths.
+            mapped_dups: The duplicates with path mapping.
         """
-        if not config["beets"]["base-path"].get(str) or not config["navidrome"]["base-path"].get(str):
-            PU.warning("Skipping base path update, since no paths are set")
-            return
-        if config["beets"]["base-path"].get(str) == config["navidrome"]["base-path"].get(str):
-            PU.warning("Skipping base path update as target equals source")
-            return
+        mapped_dups: dict[list[dict]] = {}
+        beets_base = config["beets"]["base-path"].get(str)
+        nd_base = config["navidrome"]["base-path"].get(str)
+        for key in beets_dups:
+            mapped_dups[key] = {}
+            for beets_path in beets_dups[key]:
+                nd_path = beets_path.replace(beets_base, nd_base, 1)
+                # Normalize Unicode characters in the file path. Otherwise characters like `á` (`\u0061\u0301`)
+                # and `á` (`\u00e1`) are not threaded as the same.
+                nd_path = unicodedata.normalize("NFC", nd_path)
+                mapped_dups[key][nd_path] = beets_path
 
-        for paths in dups_input.values():
-            item: str
-            for i, item in enumerate(paths):
-                paths[i] = item.replace(
-                    config["beets"]["base-path"].get(str), config["navidrome"]["base-path"].get(str), 1
-                )
-        PU.info(
-            f"Updated all base paths from '{config["beets"]["base-path"].get(str)}' to '{config["navidrome"]["base-path"].get(str)}'."
-        )
+        PU.info(f"Base paths mapping done ('{beets_base}':'{nd_base}')")
+        return mapped_dups
 
-    def _query_media_data(self, dups_input: dict[str, list[str]]):
+    def _query_media_data(self, dups_input: dict[str, dict]):
         """
         Query the Navidrome database for each duplicate file and get all relevant data.
 
@@ -331,7 +330,7 @@ class DuplicateProcessor:
                 self.data.media[key] = []
                 batch = list(self.db.get_media_batch(files, conn))
                 self.data.media[key] += batch
-                self.stats.duplicate_files += len(files)
+                self.stats.duplicate_files += len(files.keys())
 
                 PU.progress_bar(progress, progress_total)
                 progress += 1
@@ -340,7 +339,7 @@ class DuplicateProcessor:
 
                 # --> Not found in Navidrome
                 if len(files) != len(batch):
-                    missing_media = [f for f in files if f not in [m.path for m in batch]]
+                    missing_media = [f for f in files.keys() if f not in [m.path for m in batch]]
                     for file in missing_media:
                         PU.warning(msg=f"\nExcluding media file not found in Navidrome: {file}")
 
@@ -354,7 +353,7 @@ class DuplicateProcessor:
         Merge data of all media file annotations referred to as duplicates.
 
         Args:
-           dups_media_files (list[MediaFile]): Dictionary of media files grouped by their key.
+           duplicates (list[MediaFile]): Dictionary of media files grouped by their key.
 
         """
         # Build title for logging purposes
@@ -420,12 +419,12 @@ class DuplicateProcessor:
 
         return (play_count, play_date, rating, starred, starred_at)
 
-    def _save_all_annotations(self, dups_media_files: dict[str, list[MediaFile]]):
+    def _save_all_annotations(self, duplicates: dict[str, list[MediaFile]]):
         """
         Save all annotations of all media file duplicates to the database.
         """
         with NavidromeDbConnection() as conn:
-            for _, dups in dups_media_files.items():
+            for _, dups in duplicates.items():
                 for media in dups:
                     self.db.store_annotation(media.annotation, conn)
             conn.commit()
