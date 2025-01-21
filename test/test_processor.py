@@ -7,15 +7,10 @@ import jsonpickle
 import pytest
 
 from ndtoolbox.app import DuplicateProcessor
+from ndtoolbox.config import config
 from ndtoolbox.model import Album, Annotation, Artist, MediaFile
-from ndtoolbox.utils import ToolboxConfig
 
-ND_DATABASE_PATH = "test/data/navidrome.db"
-ND_DATA_FILE = "data/nd-toolbox-data.json"
-ND_DATA_FILE = "test/data/nd-toolbox-data.json"
-DATA_DIR = "test/data"
-BEETS_BASE_PATH = "/app/music"
-ND_BASE_PATH = "/music/library"
+config.set_file("test/config/config.yaml")
 
 FILES = [
     MediaFile(
@@ -31,6 +26,7 @@ FILES = [
         album_id=None,
         album_name=None,
         mbz_recording_id="recording-1",
+        beets_path="/music/path/library/to/file1.mp3",
     ),
     MediaFile(
         id="22",
@@ -45,6 +41,7 @@ FILES = [
         album_id=None,
         album_name=None,
         mbz_recording_id="recording-2",
+        beets_path="/music/path/library/to/file2 2.mp3",
     ),
     MediaFile(
         id="33",
@@ -59,6 +56,7 @@ FILES = [
         album_id=None,
         album_name=None,
         mbz_recording_id="recording-3",
+        beets_path="/music/path/library/to/file3.mp3",
     ),
     MediaFile(
         id="44",
@@ -73,6 +71,7 @@ FILES = [
         album_id=None,
         album_name=None,
         mbz_recording_id="recording-3",
+        beets_path="/music/path/library/to/file4.mp3",
     ),
 ]
 # Set annotations for each file
@@ -91,19 +90,14 @@ for f in FILES:
 @pytest.fixture(scope="session")
 def processor():
     """Fixture to create a DuplicateProcessor instance."""
-    config = ToolboxConfig(False)
-    config.navidrome_db_path = ND_DATABASE_PATH
-    config.data_folder = DATA_DIR
-    config.source_base = BEETS_BASE_PATH
-    config.target_base = ND_BASE_PATH
-    processor = DuplicateProcessor(config)
+    processor = DuplicateProcessor()
     yield processor
 
 
 def test_encode_decode_json_pickle(processor: DuplicateProcessor):
     """Test encoding and decoding of JSON using jsonpickle."""
     file_path = "test/data/test-data.json"
-    data = {"dups_media_files": FILES, "stats": "bbb", "errors": []}
+    data = {"duplicates": FILES, "stats": "bbb", "errors": []}
     with open(file_path, "w", encoding="utf-8") as file:
         file.write(jsonpickle.encode(data, indent=4, keys=True))
 
@@ -124,6 +118,7 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
         album_id=None,
         album_name=None,
         mbz_recording_id="recording-1",
+        beets_path="/music/path/library/to/file1.mp3",
     )
     a.annotation = Annotation(
         item_id="1",
@@ -148,6 +143,7 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
         album_id=None,
         album_name=None,
         mbz_recording_id="recording-2",
+        beets_path="/music/path/library/to/file1.mp3",
     )
     b.annotation = Annotation(
         item_id="2",
@@ -172,6 +168,7 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
         album_id=None,
         album_name=None,
         mbz_recording_id="recording-2",
+        beets_path="/music/path/library/to/file3.mp3",
     )
     c.annotation = Annotation(
         item_id="3",
@@ -280,6 +277,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_id=0,
             album_name=None,
             mbz_recording_id=None,
+            beets_path="/music/path/library/to/file1.mp3",
         ),
         MediaFile(
             id="12",
@@ -294,6 +292,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_id=0,
             album_name=None,
             mbz_recording_id=None,
+            beets_path="/music/path/library/to/file1.mp3",
         ),
         MediaFile(
             id="13",
@@ -308,6 +307,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_id=0,
             album_name=None,
             mbz_recording_id=None,
+            beets_path="/music/path/library/to/file3.mp3",
         ),
         MediaFile(
             id="14",
@@ -322,6 +322,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_id=0,
             album_name=None,
             mbz_recording_id=None,
+            beets_path="/music/path/library/to/file4.mp3",
         ),
         MediaFile(
             id="15",
@@ -336,6 +337,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_id=0,
             album_name=None,
             mbz_recording_id=None,
+            beets_path="/music/path/library/to/file4.mp3",
         ),
         MediaFile(
             id="16",
@@ -350,6 +352,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_id=0,
             album_name=None,
             mbz_recording_id="musicBrainzID",
+            beets_path="/music/path/library/to/file4.mp3",
         ),
         MediaFile(
             id="17",
@@ -364,6 +367,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_id=0,
             album_name=None,
             mbz_recording_id="musicBrainzID",
+            beets_path="/music/path/library/to/file4.mp3",
         ),
         # That's a keeper:
         MediaFile(
@@ -379,6 +383,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_id=0,
             album_name=None,
             mbz_recording_id="musicBrainzID",
+            beets_path="/music/path/library/to/file4.mp3",
         ),
     ]
 
@@ -397,6 +402,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_id=0,
             album_name=None,
             mbz_recording_id="musicBrainzID",
+            beets_path="/music/path/library/to/file4.mp3",
         ),
         MediaFile(
             id="2000",
@@ -411,6 +417,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_id=0,
             album_name=None,
             mbz_recording_id=None,
+            beets_path="/music/path/library/to/file4.mp3",
         ),
     ]
 
@@ -429,6 +436,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_id=0,
             album_name=None,
             mbz_recording_id=None,
+            beets_path="/music/path/library/to/file4.mp3",
         ),
         MediaFile(
             id="artist_keeper_id",
@@ -443,6 +451,7 @@ def test_get_keepable_media(processor: DuplicateProcessor):
             album_id=0,
             album_name=None,
             mbz_recording_id=None,
+            beets_path="/music/path/library/to/file4.mp3",
         ),
     ]
 
@@ -459,7 +468,8 @@ def test_get_keepable_media(processor: DuplicateProcessor):
     keeper = processor._get_keepable_media(dups2)
     assert keeper.id == dups2[0].id
     assert keeper.album is not None
-    assert keeper.album.has_keepable is True
+    assert keeper.folder is not None
+    assert keeper.folder.has_keepable is True
     assert keeper.title == "The Song"
     assert keeper.bitrate == 1024
 
@@ -467,7 +477,8 @@ def test_get_keepable_media(processor: DuplicateProcessor):
     keeper = processor._get_keepable_media(dups)
     assert keeper.id == dups[7].id
     assert keeper.album is not None
-    assert keeper.album.has_keepable is True
+    assert keeper.folder is not None
+    assert keeper.folder.has_keepable is True
     assert keeper.title == "File 8"
     assert keeper.bitrate == 320
 

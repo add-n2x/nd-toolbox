@@ -2,17 +2,19 @@
 
 import pytest
 
+from ndtoolbox.app import DataCache
+from ndtoolbox.config import config
 from ndtoolbox.db import Annotation, NavidromeDb, NavidromeDbConnection
 from ndtoolbox.model import MediaFile
-from ndtoolbox.utils import ToolboxConfig
+
+config.set_file("test/config/config.yaml")
 
 # Example data to use for testing
-TEST_DB_PATH = "test/data/navidrome.db"
 TEST_USER_ID = "b67d5135-cf67-4544-8013-d0f7c2d8a65a"
 
 test_media_file = MediaFile(
     id="111",
-    path="/music/foobar/dummy1.mp3",
+    path="/music/library/foobar/dummy1.mp3",
     title="Foo Bar",
     year=2005,
     track_number=3,
@@ -24,6 +26,7 @@ test_media_file = MediaFile(
     album_name=None,
     mbz_recording_id=None,
 )
+test_media_file.beets_path = "/music/foobar/dummy1.mp3"
 
 test_anno = Annotation(
     item_type=Annotation.Type.media_file,
@@ -39,8 +42,8 @@ test_anno = Annotation(
 @pytest.fixture(scope="session")
 def db():
     """Fixture to provide a database connection for tests."""
-    ToolboxConfig()
-    db = NavidromeDb(db_path=TEST_DB_PATH)
+    db_path = config["navidrome"]["database"].get(str)
+    db = NavidromeDb(db_path, DataCache())
     yield db
 
 
@@ -60,7 +63,7 @@ def test_get_media(db, mocker):
 
     # Retrieve the media file from the database
     with NavidromeDbConnection() as conn:
-        media_file = db.get_media(test_media_file.path, conn)
+        media_file = db.get_media((test_media_file.beets_path, test_media_file.path), conn)
 
         print(f"Media file: {media_file}")
         print(f"File annotation: {media_file.annotation}")
