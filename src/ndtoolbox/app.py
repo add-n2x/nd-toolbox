@@ -23,7 +23,6 @@ from ndtoolbox.utils import StringUtil as SU
 class DataCache:
     """Cache for objects to process duplicates and their relations."""
 
-    directories: dict
     artists: dict
     albums: dict
     media: dict
@@ -31,12 +30,10 @@ class DataCache:
     def __init__(self, data: dict = None):
         """Init cache."""
         if data is None:
-            self.directories = {}
             self.artists = {}
             self.albums = {}
             self.media = {}
         else:
-            self.directories = data["directories"]
             self.artists = data["artists"]
             self.albums = data["albums"]
             self.media = data["media"]
@@ -137,7 +134,7 @@ class DuplicateProcessor:
         dup_folders = self._split_duplicates_by_album_folder(self.data.media)
         PU.info("List duplicates per album folder:")
         PU.ln()
-        for folder, dups in dup_folders.items():
+        for _, dups in dup_folders.items():
             PU.info(f"\n{FileUtil.get_folder(dups[0].path)} " + SU.bold(f"[Album: {dups[0].album_name}]"))
             for dup in dups:
                 file = FileUtil.get_file(dup.path)
@@ -656,9 +653,6 @@ class DuplicateProcessor:
         PU.warning(f"No condition matched, keeping this one ({this.path}), instead of that one ({that.path})")
         this.delete_reason = f"No reason, since no condition matched | {SU.gray(that.path)}"
         return that
-
-    #    self.init_logger()
-    #     self.print_info()
 
 
 def print_info():

@@ -98,7 +98,7 @@ class NavidromeDb:
 
             return users[0][0]
 
-    def get_media(self, file_path: str, conn: NavidromeDbConnection) -> MediaFile:
+    def get_media(self, path_tuple: tuple, conn: NavidromeDbConnection) -> MediaFile:
         """
         Retrieves the media file associated with the given file path and all related objects.
 
@@ -106,13 +106,13 @@ class NavidromeDb:
         If artist and album objects are available in the cache, then those are used.
 
         Args:
-            file_path (str): The path to the media file.
+            path_tuple, nd_path (tuple): The beets and nd path tuple to the media file.
             conn (NavidromeDbConnection): The database connection to use.
 
         Returns:
             MediaFile: The media file object.
         """
-        media = self.get_media_file(file_path, conn)
+        media = self.get_media_file(path_tuple, conn)
         if media:
             # Get file annotation
             media.annotation = self.get_media_annotation(media, Annotation.Type.media_file, conn)
@@ -137,11 +137,6 @@ class NavidromeDb:
             media.album = self.get_album(media, media.album_id, conn) if not media.album else media.album
             if media.album:
                 self.cache.albums[media.album_id] = media.album
-            # Store album folder in directories dictionary
-            dir = FileUtil.get_folder(media.path)
-            media.folder = self.cache.directories.get(dir)
-            media.folder = Folder(media) if not media.folder else media.folder
-            self.cache.directories[dir] = media.folder
 
         return media
 
@@ -165,8 +160,8 @@ class NavidromeDb:
         params = () + tuple(file_paths.keys()) + () * (len(file_paths.keys()) + 1)
         results = cursor.execute(query, params).fetchall()
         for result in results:
-            media = MediaFile(*result)
-            media.beets_path = file_paths[media.path]
+            media = MediaFile(*result, beets_path=file_paths[result[1]])
+
             # Get artist data
             media.artist = self.cache.artists.get(media.artist_id)
             media.artist = self.get_artist(media, media.artist_id, conn) if not media.artist else media.artist
@@ -179,20 +174,14 @@ class NavidromeDb:
             if media.album:
                 self.cache.albums[media.album_id] = media.album
 
-            # Store album folder in directories dictionary
-            dir = FileUtil.get_folder(media.path)
-            media.folder = self.cache.directories.get(dir)
-            media.folder = Folder(media) if not media.folder else media.folder
-            self.cache.directories[dir] = media.folder
-
             yield media
 
-    def get_media_file(self, file_path: str, conn: NavidromeDbConnection) -> MediaFile:
+    def get_media_file(self, path_tuple: tuple, conn: NavidromeDbConnection) -> MediaFile:
         """
         Retrieve a media file from the database based on its path.
 
         Args:
-            file_path (str): The path of the media file to retrieve.
+            path_tuple (tuple): The beets and nd path of the media file to retrieve.
             conn (NavidromeDbConnection): The database connection to use.
 
         Returns:
@@ -205,14 +194,14 @@ class NavidromeDb:
         """
 
         cursor = conn.cursor()
-        cursor.execute(query, (file_path,))
+        cursor.execute(query, (path_tuple[1],))
         result = cursor.fetchone()
 
         if not result:
             return None
         return MediaFile(
             result[0],
-            file_path,
+            path_tuple[1],
             result[1],
             result[2],
             result[3],
@@ -223,6 +212,7 @@ class NavidromeDb:
             result[8],
             result[9],
             result[10],
+            path_tuple[1],
         )
 
     def get_artist(self, media_file: MediaFile, artist_id: str, conn: NavidromeDbConnection) -> Artist:

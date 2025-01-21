@@ -125,6 +125,11 @@ class FileUtil:
         return folders
 
     @staticmethod
+    def is_library_path(base_path: str, path: str) -> bool:
+        """Check if the given path is a library path."""
+        return path.startswith(base_path)
+
+    @staticmethod
     def get_album_folder(path: str) -> str:
         """Get album folder from file path."""
         folder = FileUtil.get_folder(path)

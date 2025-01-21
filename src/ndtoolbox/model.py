@@ -170,11 +170,12 @@ class MediaFile:
         album_id: str,
         album_name: str,
         mbz_recording_id: str,
+        beets_path: str = None,
     ):
         """Init instance."""
         self.id = id
         self.path = path
-        self.beets_path = None
+        self.beets_path = beets_path
         self.folder = None
         self.title = title
         self.year = year
@@ -191,13 +192,14 @@ class MediaFile:
         self.annotation = None
         self.is_deletable = False
         self.delete_reason = None
+        self.folder = Folder.of_media(self)
 
     def __repr__(self) -> str:
         """Instance representation."""
         return f"MediaFile(id={self.id}, path={self.path}, title={self.title}, year={self.year}, \
             track_number={self.track_number}, duration={self.duration}, bitrate={self.bitrate}, \
             artist_id={self.artist_id}, artist_name={self.artist_name} album_id={self.album_id}, \
-            album_name={self.album_name}, mbz_recording_id={self.mbz_recording_id})"
+            album_name={self.album_name}, mbz_recording_id={self.mbz_recording_id}, beets_path={self.beets_path})"
 
 
 class Folder:
@@ -235,11 +237,24 @@ class Folder:
     total: int
     missing: int
 
-    def __init__(self, media: MediaFile):
+    @staticmethod
+    def of_media(media: MediaFile) -> "Folder":
+        """Create a folder from media file including cache look-up."""
+        dir = FileUtil.get_folder(media.beets_path)
+        folder = Folder.CACHE.get(dir)
+        if not folder:
+            folder = Folder(dir, media.album_name)
+            Folder.CACHE[dir] = folder
+        return folder
+
+    def __init__(self, beets_path: str, nd_album: str):
         """Init instance."""
-        self.beets_path = FileUtil.get_folder(media.beets_path)
+        beets_base = config["beets"]["base-path"].get(str)
+        if not FileUtil.is_library_path(beets_base, beets_path):
+            raise ValueError(f"Invalid library base path: {beets_path} expected to start with {beets_base}")
+        self.beets_path = beets_path
         self.beets_album = None
-        self.nd_album = media.album_name
+        self.nd_album = nd_album
         self.files = []
         self.has_keepable = False
         self.is_compilation = False
@@ -249,11 +264,11 @@ class Folder:
 
         # Set folder type
         self.type = Folder.Type.ALBUM
-        if self.beets_path == config["beets"]["base-path"].get(str):
+        if self.beets_path == beets_base:
             self.type = Folder.Type.ROOT
-        elif FileUtil.is_artist_folder(config["beets"]["base-path"].get(str), self.beets_path):
+        elif FileUtil.is_artist_folder(beets_base, self.beets_path):
             self.type = Folder.Type.ARTIST
-        elif FileUtil.is_album_folder(config["beets"]["base-path"].get(str), self.beets_path):
+        elif FileUtil.is_album_folder(beets_base, self.beets_path):
             self.type = Folder.Type.ALBUM
         else:
             self.type = Folder.Type.UNKNOWN
@@ -276,10 +291,7 @@ class Folder:
             return None
 
         # Get album info from cache if available
-        infos = Folder.CACHE.get(self.beets_path)
-        if not infos:
-            infos = list(BeetsClient.get_album_info(self.beets_path))
-            Folder.CACHE[self.beets_path] = infos
+        infos = list(BeetsClient.get_album_info(self.beets_path))
 
         if not infos:
             # TODO Clarify how to handle this case
