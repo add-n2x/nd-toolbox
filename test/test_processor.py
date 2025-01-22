@@ -235,6 +235,7 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
 
 
 def test_merge_annotation_list(processor: DuplicateProcessor):
+    """Test merge annotation list."""
     Folder.clear_cache()
 
     """Test the merge_annotation_list method."""
