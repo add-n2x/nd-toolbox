@@ -13,7 +13,7 @@ packages = [
 
 [tool.poetry.dependencies]
 beets = "^2.2.0"
-python = "^3.12"
+python = "^3.13"
 python-dotenv = "^1.0.1"
 pytest-mock = "^3.14.0"
 jsonpickle = "^4.0.1"
@@ -23,7 +23,6 @@ easydict = "^1.13"
 fuzzywuzzy = "^0.18.0"
 python-levenshtein = "^0.26.1"
 confuse = "^2.0.1"
-
 
 [tool.poetry.group.dev.dependencies]
 codespell = "^2.3.0"
