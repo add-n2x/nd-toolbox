@@ -25,8 +25,8 @@ test_media_file = MediaFile(
     album_id=None,
     album_name=None,
     mbz_recording_id=None,
+    beets_path="/music/foobar/dummy1.mp3",
 )
-test_media_file.beets_path = "/music/foobar/dummy1.mp3"
 
 test_anno = Annotation(
     item_type=Annotation.Type.media_file,
