@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.13-alpine
 
 # Set version label
 ARG BUILD_DATE
@@ -36,6 +36,10 @@ ENV ND_BASE_PATH=/music/library
 VOLUME /app/config/beets
 VOLUME /app/data
 
+# Install dependencies
+RUN echo "Installing dependencies..." && \
+    apk add --no-cache make
+    # apk add --update
 
 # Configure Poetry
 ENV POETRY_VERSION=1.8.5
@@ -48,13 +52,6 @@ RUN python3 -m venv $POETRY_VENV \
     && $POETRY_VENV/bin/pip install -U pip setuptools \
     && $POETRY_VENV/bin/pip install poetry==${POETRY_VERSION}
 ENV PATH="${PATH}:${POETRY_VENV}/bin"
-
-# Install dependencies
-RUN echo "Installing dependencies..." && \
-    apt-get update && apt-get -y install \
-    apt-utils \
-    build-essential \
-    pip
 
 # Add local files
 RUN mkdir -p /app /config /music /data \

@@ -99,5 +99,5 @@ docker.run::
 		-v ./music:/music  \
 		-v ./data:/data  \
 		-e TZ=${TIMEZONE} \
-		--entrypoint bash nd-toolbox
+		--entrypoint sh nd-toolbox
 
