@@ -5,7 +5,7 @@ import pytest
 from ndtoolbox.app import DataCache
 from ndtoolbox.config import config
 from ndtoolbox.db import Annotation, NavidromeDb, NavidromeDbConnection
-from ndtoolbox.model import MediaFile
+from ndtoolbox.model import Folder, MediaFile
 
 config.set_file("test/config/config.yaml")
 
@@ -55,6 +55,8 @@ def test_init_user(db):
 
 def test_get_media(db, mocker):
     """Test the retrieval of a media file from the database."""
+    Folder.clear_cache()
+
     # Mock the database query to return a specific media file and annotation
     mocker.patch.object(db, "get_media_file", autospec=True)
     db.get_media_file.return_value = test_media_file
@@ -89,6 +91,8 @@ def test_get_media(db, mocker):
 
 def test_get_invalid_annotation(db: NavidromeDb):
     """Test retrieving an invalid annotation."""
+    Folder.clear_cache()
+
     # Attempt to retrieve an annotation that does not exist
     with NavidromeDbConnection() as conn:
         invalid_anno = db.get_annotation(1000, Annotation.Type.album, conn)
@@ -97,6 +101,8 @@ def test_get_invalid_annotation(db: NavidromeDb):
 
 def test_store_annotation(db: NavidromeDb):
     """Test storing an annotation."""
+    Folder.clear_cache()
+
     # Delete any existing annotations with item_id 999
     with NavidromeDbConnection() as conn:
         db.delete_annotation("999", Annotation.Type.album, conn)

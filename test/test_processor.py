@@ -8,7 +8,7 @@ import pytest
 
 from ndtoolbox.app import DuplicateProcessor
 from ndtoolbox.config import config
-from ndtoolbox.model import Album, Annotation, Artist, MediaFile
+from ndtoolbox.model import Album, Annotation, Artist, Folder, MediaFile
 
 config.set_file("test/config/config.yaml")
 
@@ -104,6 +104,8 @@ def test_encode_decode_json_pickle(processor: DuplicateProcessor):
 
 def test_merge_annotation_data(processor: DuplicateProcessor):
     """Test merging annotation data from two MediaFile objects."""
+    Folder.clear_cache()
+
     # Create two MediaFile objects with some annotation data
     a = MediaFile(
         id="1",
@@ -233,6 +235,8 @@ def test_merge_annotation_data(processor: DuplicateProcessor):
 
 
 def test_merge_annotation_list(processor: DuplicateProcessor):
+    Folder.clear_cache()
+
     """Test the merge_annotation_list method."""
     # Create a list of four Media files with annotations
     files = copy.copy(FILES)
@@ -263,6 +267,8 @@ def test_get_keepable_media(processor: DuplicateProcessor):
     1. Media file has a better bit rate than any of the other duplicate media files.
     1. Media file holds a release year.
     """
+    Folder.clear_cache()
+
     dups = [
         MediaFile(
             id="11",

@@ -40,6 +40,7 @@ def subprocess_out():
 
 def test_album_folder(infos, mocker):
     """Test album folder."""
+    Folder.clear_cache()
     mocker.patch.object(BeetsClient, "get_album_info", autospec=True)
     BeetsClient.get_album_info.return_value = infos
 
@@ -67,6 +68,7 @@ def test_album_folder(infos, mocker):
 
 def test_album_folder_dirty(infos2, mocker):
     """Test album folder."""
+    Folder.clear_cache()
     mocker.patch.object(BeetsClient, "get_album_info", autospec=True)
     BeetsClient.get_album_info.return_value = infos2
 
@@ -94,6 +96,7 @@ def test_album_folder_dirty(infos2, mocker):
 
 def test_album_folder_dirty_beets(subprocess_out, mocker):
     """Test mayday folder."""
+    Folder.clear_cache()
     mocker.patch.object(subprocess, "check_output", autospec=True)
     subprocess.check_output.return_value = subprocess_out
 
