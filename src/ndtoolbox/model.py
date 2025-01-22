@@ -238,6 +238,11 @@ class Folder:
     missing: int
 
     @staticmethod
+    def clear_cache():
+        """Clear the cache."""
+        Folder.CACHE = {}
+
+    @staticmethod
     def of_media(media: MediaFile) -> "Folder":
         """Create a folder from media file including cache look-up."""
         dir = FileUtil.get_folder(media.beets_path)
