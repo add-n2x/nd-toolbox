@@ -102,7 +102,7 @@ def test_album_folder_dirty_beets(subprocess_out, mocker):
 
     media = MediaFile(
         "1",
-        "/music/library/artist/album11/track.mp3",
+        "/music/library/artist/album1144/track.mp3",
         "title",
         2003,
         1,
@@ -113,10 +113,10 @@ def test_album_folder_dirty_beets(subprocess_out, mocker):
         "2",
         "album",
         "mbz3",
-        beets_path="/music/artist/album11/track.mp",
+        beets_path="/music/artist/album1144/track.mp",
     )
     folder = media.folder
-    assert folder.beets_path == "/music/artist/album11"
+    assert folder.beets_path == "/music/artist/album1144"
     assert folder.has_keepable is False
     assert folder.is_dirty is True
     assert folder.type == Folder.Type.UNKNOWN
