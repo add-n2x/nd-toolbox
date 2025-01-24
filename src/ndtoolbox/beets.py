@@ -1,19 +1,13 @@
 """Classes for interaction with Beets."""
 
-# import os
+import io
 import subprocess
-
-# from pathlib import Path
+import sys
 from typing import Generator
 
-# import confuse
-# from beets.dbcore.query import AndQuery, FieldQuery, OrQuery, SubstringQuery
-# from beets.library import Library
+from beets.ui import main
 from easydict import EasyDict
 
-# from beets.ui import print_
-# from beets.util import syspath, displayable_path, normpath
-# from ndtoolbox import config
 from ndtoolbox.utils import PrintUtil as PU
 from ndtoolbox.utils import StringUtil as SU
 
@@ -21,41 +15,33 @@ from ndtoolbox.utils import StringUtil as SU
 class BeetsClient:
     """Client wrapping commands for Beets."""
 
-    # lib: Library = None
+    query_type: int
 
-    # def __init__(self):
-    #     """Initialize the Beets client."""
-    #     confuse.Path(cwd="config/beets")
-    #     libpath = config["beets"]["library"].get(str)
-    #     BeetsClient.lib = Library(libpath)
-    #     paths_found = []
+    def __init__(self, query_type: int):
+        """Initialize BeetsClient."""
+        self.query_type = query_type
 
-    # def _query_lib(self, beet_query, message, silent=False):
-    #     """beet_query can be string or query object. Returns a list of paths."""
-    #     # libpath = os.path.expanduser(Path(SHELLENV["BEETSDIR"]) / "jtbeets_gin.db")
-    #     libpath = Config.beets_db_path
-    #     lib = Library(libpath)
-    #     paths_found = []
+    def query(self, cmd: list) -> list:
+        """Query Beets."""
+        results = None
+        # Use subprocess query
+        if self.query_type == 0:
+            cmd = ["beet"] + cmd
+            cmd = " ".join(cmd)
+            results = subprocess.check_output(cmd, shell=True, text=True)
+            results = results.splitlines()
+        # Query by capturing stout
+        else:
+            base_cmd = ["-c", "config/beets/config.yaml"]
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            main(base_cmd + cmd)
+            sys.stdout = sys.__stdout__
+            results = captured_output.getvalue()
+            captured_output.close()
+        return results
 
-    #     for item in lib.items(beet_query):
-    #         paths_found += [item.get("path")]
-    #     return paths_found
-
-    # def _query1(self):
-    #     isrc = ""
-    #     beet_result = self._query_lib(SubstringQuery("isrc", isrc), "", silent=True)
-    #     return beet_result
-
-    # def _query1(self):
-    #     artist = "oasis"
-    #     title = "wonderwall"
-    #     beet_result = self._query_lib(
-    #         AndQuery([SubstringQuery("artist", artist), SubstringQuery("title", title)]),
-    #     )
-    #     return beet_result
-
-    @staticmethod
-    def get_album_info(album_path) -> Generator[EasyDict]:
+    def get_album_info(self, album_path) -> Generator[EasyDict]:
         """
         Get album information based on given folder.
 
@@ -68,16 +54,15 @@ class BeetsClient:
                 files from multiple albums. In that case, it will be treated as a manual compilation (mixtape).
         """
         album_info = EasyDict({"album": None, "total": None, "missing": None, "compilation": False})
-        cmd = f"beet ls -a -f '$album:::$albumtotal:::$missing:::$comp' path:\"{album_path}\""
-        PU.debug(f"BEET CMD: {cmd}")
+        cmd = ["ls", "-a", "-f", "$album:::$albumtotal:::$missing:::$comp", f'path:"{album_path}"']
+        PU.debug(f"Beets query args: {cmd}")
 
         try:
-            result = subprocess.check_output(cmd, shell=True, text=True)
-            PU.debug(SU.pink(f"BEET RESULT: {result}"))
+            result = self.query(cmd)
+            PU.debug(SU.pink(f"Beets result: {result}"))
 
             if result:
-                lines = result.splitlines()
-                for line in lines:
+                for line in result:
                     result = line.split(":::")
                     if len(result) != 4:
                         msg = f"Unexpected result format while getting album info for '{album_path}': {result}"
@@ -96,3 +81,6 @@ class BeetsClient:
         except Exception as e:
             PU.error("Unknown error occurred while checking for missing files:" + str(e))
         return None
+
+
+beets = BeetsClient(0)
