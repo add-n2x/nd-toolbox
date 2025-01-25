@@ -12,3 +12,4 @@ __pycache__
 /.env
 /test/data/test-data.json
 /test/data/nd-toolbox-data.json
+/test/data/beets/library.db
