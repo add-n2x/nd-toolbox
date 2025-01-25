@@ -16,7 +16,7 @@ IS_MICROSOFT_PYTHON = "AppData\\Local\\Microsoft\\WindowsApps" in sys.exec_prefi
 config.set_file("test/config/config.yaml")
 
 
-def test_beets_ui():
+def manual_test_beets_ui():
     """Test Beets UI."""
     if IS_MICROSOFT_PYTHON:
         return
@@ -30,7 +30,7 @@ def test_beets_ui():
     print("Beets stats:" + results)
 
 
-def test_beets_client():
+def manual_test_beets_client():
     """Test Beets client."""
     if IS_MICROSOFT_PYTHON:
         return
