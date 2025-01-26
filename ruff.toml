@@ -43,7 +43,7 @@ select = [
     "I",  # isort
     "B",  # flake8-bugbear
     "C4", # flake8-comprehensions
-    "N",  # PEP8 naming convetions
+    "N",  # PEP8 naming convetnions
     "D"  # pydocstyle
 ]
 

@@ -304,7 +304,7 @@ class NavidromeDb:
 
         Returns:
             Annotation: The annotation object from the database, if existing. Otherwise it returns
-               the existsing annotation assigned to the media file.
+               the existing annotation assigned to the media file.
         """
         item_id: str = media_file.__getattribute__(type.value)
         annotation = self.get_annotation(item_id, type, conn)

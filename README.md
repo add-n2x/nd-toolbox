@@ -10,7 +10,7 @@
 using [Beets](https://beets.io/) and custom logic. 
 
 It aims to maintain a well-organized music library by:
-- Organize your Navidrome fileystem library according to MusicBrainz folder convention.
+- Organize your Navidrome filesystem library according to MusicBrainz folder convention.
 - Removing duplicate tracks while preserving play counts and ratings.
 - Avoiding the need for user interaction as much as possible.
 - Offering additional helpful tools for managing your Navidrome library.
@@ -73,7 +73,7 @@ Optionally set these environment variables:
 ### Remove files with unsupported extensions
 
 Remove files with unsupported extensions from your music library. This is useful to clean up your library before 
-importing it into Beets. Set the envinronment variable `UNSUPPORTED_EXTENSIONS` to a list of extensions you want to 
+importing it into Beets. Set the environment variable `UNSUPPORTED_EXTENSIONS` to a list of extensions you want to 
 remove. Defaults to `m4p mp4 mp2`.
 
 ```bash
