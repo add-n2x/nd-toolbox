@@ -1,6 +1,6 @@
 [codespell]
 exclude-file = .gitignore
-skip = /tmp/*,*.log,.git,*.png,*.db
-ignore-words-list = ND
+skip = /tmp/*,*.log,.git,*.png,*.db,data,Makefile
+ignore-words-list = ND,nd
 count =
 quiet-level = 3
