@@ -6,7 +6,7 @@ from typing import Generator
 import pytest
 from easydict import EasyDict
 
-from ndtoolbox.beets import BeetsClient
+from ndtoolbox.client import BeetsClient
 from ndtoolbox.config import config
 from ndtoolbox.model import Folder, MediaFile
 

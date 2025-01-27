@@ -83,4 +83,4 @@ class BeetsClient:
         return None
 
 
-beets = BeetsClient(0)
+beetsClient = BeetsClient(0)

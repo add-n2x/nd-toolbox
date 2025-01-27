@@ -8,7 +8,7 @@ from datetime import datetime
 
 from beets.ui import main
 
-from ndtoolbox.beets import BeetsClient
+from ndtoolbox.client import BeetsClient
 from ndtoolbox.config import config
 
 IS_MICROSOFT_PYTHON = "AppData\\Local\\Microsoft\\WindowsApps" in sys.exec_prefix
