@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from ndtoolbox.client import beetsClient
+from ndtoolbox.client import beets_client
 from ndtoolbox.config import config
 from ndtoolbox.utils import DateUtil as DU
 from ndtoolbox.utils import FileUtil
@@ -296,7 +296,7 @@ class Folder:
             return None
 
         # Get album info from cache if available
-        infos = list(beetsClient.get_album_info(self.beets_path))
+        infos = list(beets_client.get_album_info(self.beets_path))
 
         if not infos:
             # TODO Clarify how to handle this case

@@ -28,11 +28,14 @@ class BeetsClient:
         if self.query_type == 0:
             cmd = ["beet"] + cmd
             cmd = " ".join(cmd)
+            PU.debug(f"Beets query command: {cmd}")
             results = subprocess.check_output(cmd, shell=True, text=True)
             results = results.splitlines()
         # Query by capturing stout
         else:
             base_cmd = ["-c", "config/beets/config.yaml"]
+            cmd = base_cmd + cmd
+            PU.debug(f"Beets query args: {cmd}")
             captured_output = io.StringIO()
             sys.stdout = captured_output
             main(base_cmd + cmd)
@@ -54,15 +57,14 @@ class BeetsClient:
                 files from multiple albums. In that case, it will be treated as a manual compilation (mixtape).
         """
         album_info = EasyDict({"album": None, "total": None, "missing": None, "compilation": False})
-        cmd = ["ls", "-a", "-f", "$album:::$albumtotal:::$missing:::$comp", f'path:"{album_path}"']
-        PU.debug(f"Beets query args: {cmd}")
+        cmd = ["ls", "-a", "-f", "'$album:::$albumtotal:::$missing:::$comp'", f'path:"{album_path}"']
 
         try:
-            result = self.query(cmd)
-            PU.debug(SU.pink(f"Beets result: {result}"))
+            lines = self.query(cmd)
+            PU.debug(SU.pink(f"Beets result: {lines}"))
 
-            if result:
-                for line in result:
+            if lines:
+                for line in lines:
                     result = line.split(":::")
                     if len(result) != 4:
                         msg = f"Unexpected result format while getting album info for '{album_path}': {result}"
@@ -77,10 +79,10 @@ class BeetsClient:
             else:
                 PU.warning("Got no result from missing files check!")
         except ValueError as ve:
-            PU.error("Error occurred while checking for missing files:" + str(ve))
+            PU.error(f"Error occurred while checking for missing files (beets result: {result}), error:" + str(ve))
         except Exception as e:
             PU.error("Unknown error occurred while checking for missing files:" + str(e))
         return None
 
 
-beetsClient = BeetsClient(0)
+beets_client = BeetsClient(0)

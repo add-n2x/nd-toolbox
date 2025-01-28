@@ -26,6 +26,7 @@ class DataCache:
     artists: dict
     albums: dict
     media: dict
+    directories: dict
 
     def __init__(self, data: dict = None):
         """Init cache."""
@@ -33,10 +34,12 @@ class DataCache:
             self.artists = {}
             self.albums = {}
             self.media = {}
+            self.directories = Folder.CACHE
         else:
             self.artists = data["artists"]
             self.albums = data["albums"]
             self.media = data["media"]
+            self.directories = data["directories"]
 
 
 class DuplicateProcessor:
