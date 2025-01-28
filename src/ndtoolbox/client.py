@@ -38,7 +38,7 @@ class BeetsClient:
             PU.debug(f"Beets query args: {cmd}")
             captured_output = io.StringIO()
             sys.stdout = captured_output
-            main(base_cmd + cmd)
+            main(cmd)
             sys.stdout = sys.__stdout__
             results = captured_output.getvalue()
             captured_output.close()
@@ -85,4 +85,4 @@ class BeetsClient:
         return None
 
 
-beets_client = BeetsClient(0)
+beets_client = BeetsClient(1)
