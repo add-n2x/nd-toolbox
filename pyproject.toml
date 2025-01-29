@@ -23,6 +23,7 @@ easydict = "^1.13"
 fuzzywuzzy = "^0.18.0"
 python-levenshtein = "^0.26.1"
 confuse = "^2.0.1"
+ruamel-yaml = "^0.18.10"
 
 [tool.poetry.group.dev.dependencies]
 codespell = "^2.3.0"
