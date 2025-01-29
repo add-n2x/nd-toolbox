@@ -85,4 +85,4 @@ class BeetsClient:
         return None
 
 
-beets_client = BeetsClient(1)
+beets_client = BeetsClient(0)
