@@ -6,7 +6,7 @@ from typing import Generator
 import pytest
 from easydict import EasyDict
 
-from ndtoolbox.client import BeetsClient
+from ndtoolbox.client import BeetsClient, beets_client
 from ndtoolbox.config import config
 from ndtoolbox.model import Folder, MediaFile
 
@@ -28,14 +28,16 @@ def infos2() -> Generator[EasyDict]:
 
 
 @pytest.fixture(scope="session")
-def subprocess_out():
+def query_result():
     """Fixture to provide Beets subprocess output."""
-    result = """:::0:::-3:::False
-                Tschuldigung.:::11:::10:::False
-                Herz für die Sache:::0:::-94:::True
-                Keine Macht für Niemand:::16:::11:::True
-                Tschuldigung.:::11:::8:::True"""
-    yield result
+    result = [
+        ":::0:::-3:::False",
+        "Tschuldigung.:::11:::10:::False",
+        "Herz für die Sache:::0:::-94:::True",
+        "Keine Macht für Niemand:::16:::11:::True",
+        "Tschuldigung.:::11:::8:::True",
+    ]
+    return result
 
 
 def test_album_folder(infos, mocker):
@@ -57,7 +59,7 @@ def test_album_folder(infos, mocker):
         "2",
         "album",
         "mbz3",
-        beets_path="/music/artist/album/track.mp",
+        beets_path="/music/artist/album/track.mp3",
     )
     folder = Folder.of_media(media)
     assert folder.beets_path == "/music/artist/album"
@@ -85,7 +87,7 @@ def test_album_folder_dirty(infos2, mocker):
         "2",
         "album",
         "mbz3",
-        beets_path="/music/artist/album23/track.mp",
+        beets_path="/music/artist/album23/track.mp3",
     )
     folder = media.folder
     assert folder.beets_path == "/music/artist/album23"
@@ -94,11 +96,11 @@ def test_album_folder_dirty(infos2, mocker):
     assert folder.type == Folder.Type.UNKNOWN
 
 
-def test_album_folder_dirty_beets(subprocess_out, mocker):
+def test_album_folder_dirty_query(query_result, mocker):
     """Test mayday folder."""
     Folder.clear_cache()
-    mocker.patch.object(subprocess, "check_output", autospec=True)
-    subprocess.check_output.return_value = subprocess_out
+    mocker.patch.object(beets_client, "query", autospec=True)
+    beets_client.query.return_value = query_result
 
     media = MediaFile(
         "1",
@@ -113,7 +115,7 @@ def test_album_folder_dirty_beets(subprocess_out, mocker):
         "2",
         "album",
         "mbz3",
-        beets_path="/music/artist/album1144/track.mp",
+        beets_path="/music/artist/album1144/track.mp3",
     )
     folder = media.folder
     assert folder.beets_path == "/music/artist/album1144"
