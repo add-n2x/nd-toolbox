@@ -4,13 +4,17 @@ This module provides functionality to process duplicate media files.
 
 import json
 import os
+import re
 import sys
 import unicodedata
 from datetime import datetime
+from io import StringIO
 
 import jsonpickle
 import tomli
 from easydict import EasyDict
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
 
 from ndtoolbox.config import config
 from ndtoolbox.db import NavidromeDb, NavidromeDbConnection
@@ -125,35 +129,45 @@ class DuplicateProcessor:
         PU.bold("Evaluating deletable duplicates based on criteria")
         PU.ln()
         for _, dups in self.data.media.items():
-            PU.log(f"\n-> Evaluating {len(dups)} duplicates:")
+            PU.debug(f"\n-> Evaluating {len(dups)} duplicates:")
             keepable = self._get_keepable_media(dups)
-            PU.log(f"<- Found keepable: {keepable.path}", 0)
+            PU.debug(f"<- Found keepable: {keepable.path}", 0)
 
-        file_path = os.path.join(config["data"].get(str), "duplicates-with-keepers.json")
-        with open(file_path, "w", encoding="utf-8") as file:
-            file.write(jsonpickle.encode(self.data.media, indent=4))
-
-        # Print the list of deletable and keepable duplicates per album
+        # Build the tree of deletable and keepable duplicates per album
+        data = CommentedMap({})
         dup_folders = self._split_duplicates_by_album_folder(self.data.media)
         PU.info("List duplicates per album folder:")
         PU.ln()
         for _, dups in dup_folders.items():
-            PU.info(f"\n{FileUtil.get_folder(dups[0].path)} " + SU.bold(f"[Album: {dups[0].album_name}]"))
+            folder = FileUtil.get_folder(dups[0].path)
+            PU.info(f"\n{folder} " + SU.bold(f"[Album: {dups[0].album_name}]"))
+            data[folder] = CommentedMap({})
             for dup in dups:
                 file = FileUtil.get_file(dup.path)
                 if dup.is_deletable is True:
+                    data[folder][file] = "DELETE"
+                    reason = SU.strip_terminal_colors(dup.delete_reason)
+                    data[folder].yaml_add_eol_comment(f"Reason: {reason}", file)
                     msg = SU.red(f"- DELETE > {file} ".ljust(42, " ")) + " - " + SU.pink(f"{dup.delete_reason}")
                 else:
+                    data[folder][file] = None
                     msg = SU.green(f"- KEEP   > {file}")
-                PU.info(msg, 1)
+                PU.debug(msg, 1)
 
+        # Store commands in yaml file for later execution
+        yaml_file = os.path.join(config["data"].get(str), "commands.yaml")
+        self._generate_command_yaml(yaml_file)
+
+        # Print stats
         PU.ln()
         PU.info(f"Files to keep: {self.stats.media_files_keepable}")
         PU.info(SU.underline(f"Files to delete: {self.stats.media_files_deletable}".ljust(40, " ")))
         PU.info(SU.underline(f"Total media files: {self.stats.media_files}".ljust(40, " ")))
         if self._has_errors():
             PU.error(f"Found {len(self.errors)} errors")
-        PU.success(f"Stored deletables and keepers to '{file_path}'")
+        PU.success(
+            f"Stored delete commands to '{yaml_file}'.\nReview the file and comment out any files you want to keep."
+        )
         self.stats.stop()
         self.stats.print_duration()
 
@@ -432,6 +446,33 @@ class DuplicateProcessor:
     def _has_errors(self) -> bool:
         """Check if there are any errors in the processing."""
         return len(self.errors) > 0
+
+    def _generate_command_yaml(self, file_name):
+        """
+        Generate a YAML command file.
+
+        It purposely create invalid YAML keys for keys with `None` values, in order to provide
+        a different syntax highlighting for those keys. This way users can more quickly see
+        which files are not going to be deleted.
+        """
+        # Serialize the data to a YAML string
+        yaml = YAML()
+        yaml.indent(mapping=2, sequence=4, offset=2)
+        stream = StringIO()
+        yaml.dump(data, stream)
+        yaml_str = stream.getvalue()
+
+        # Remove the colon (and trailing space) for keys with `None` values
+        modified_yaml = re.sub(
+            r"^(\s{2}[^:\n]+):\s*$",  # Match lines like "  inner_key: " (2-space indentation)
+            r"\1",  # Replace with "  inner_key"
+            yaml_str,
+            flags=re.MULTILINE,
+        )
+
+        # Save to a file
+        with open(file_name, "w") as f:
+            f.write(modified_yaml)
 
     def is_keepable(self, this: MediaFile, that: MediaFile) -> MediaFile:
         """

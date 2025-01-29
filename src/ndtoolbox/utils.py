@@ -4,6 +4,7 @@ Utility classes and functions for the ndtoolbox package.
 
 import glob
 import os
+import re
 import shutil
 import sys
 from datetime import datetime
@@ -274,6 +275,12 @@ class StringUtil:
     def gray(text: str) -> str:
         """Format text as gray."""
         return f"{StringUtil.GRAY}{text}{StringUtil.RESET}"
+
+    @staticmethod
+    def strip_terminal_colors(text):
+        """Match and strip ANSI escape sequences."""
+        ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+        return ansi_escape.sub("", text)
 
 
 class PrintUtil:
