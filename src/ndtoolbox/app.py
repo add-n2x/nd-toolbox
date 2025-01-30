@@ -96,7 +96,7 @@ class DuplicateProcessor:
         PU.bold("\nMerging and storing annotations for duplicate records")
         PU.ln()
 
-        n: int = 0
+        progress: int = 0
         # progress_total = len(dups)
 
         with NavidromeDbConnection() as conn:
@@ -113,8 +113,8 @@ class DuplicateProcessor:
                 self._merge_annotation_list(dups)
                 for media in dups:
                     self.db.store_annotation(media.annotation, conn)
-                    n += 1
-                PU.progress_bar(n, progress_total)
+                    progress += 1
+                    PU.progress_bar(progress, progress_total)
         PU.progress_done(progress_total)
         PU.success(f"> Successfully updated annotations for {n} media files in the Navidrome database.")
         self.stats.stop()
@@ -126,6 +126,10 @@ class DuplicateProcessor:
         """
         self._load_navidrome_data_file()
         self.stats.start()
+
+        progress_total = len(self.data.media.items())
+        progress: int = 0
+
         PU.bold("Evaluating deletable duplicates based on criteria")
         PU.ln()
         for _, dups in self.data.media.items():
@@ -133,11 +137,20 @@ class DuplicateProcessor:
             keepable = self._get_keepable_media(dups)
             PU.debug(f"<- Found keepable: {keepable.path}", 0)
 
+            progress += len(dups)
+            PU.progress_bar(progress, progress_total)
+        PU.progress_done(progress_total)
+        PU.ln()
+
+        progress_total = len(self.data.media.items())
+        progress: int = 0
+
         # Build the tree of deletable and keepable duplicates per album
         data = CommentedMap({})
         dup_folders = self._split_duplicates_by_album_folder(self.data.media)
-        PU.info("List duplicates per album folder:")
         PU.ln()
+        PU.note("Build tree of deletable and keepable duplicates per album")
+
         for _, dups in dup_folders.items():
             folder = FileUtil.get_folder(dups[0].path)
             PU.debug(f"\n{folder} " + SU.bold(f"[Album: {dups[0].album_name}]"))
@@ -153,6 +166,10 @@ class DuplicateProcessor:
                     data[folder][file] = None
                     msg = SU.green(f"- KEEP   > {file}")
                 PU.debug(msg, 1)
+
+                progress += 1
+                PU.progress_bar(progress, progress_total)
+        PU.progress_done(progress_total)
 
         # Store commands in yaml file for later execution
         yaml_file = os.path.join(config["data"].get(str), "commands.yaml")
@@ -245,7 +262,6 @@ class DuplicateProcessor:
         Split duplicates from different MusicBrainz albums, since they are not seen as duplicates.
         """
         PU.bold("Split duplicates by album")
-        PU.ln()
         # Initialize dictionary to hold duplicates grouped by album ID or MusicBrainz album ID.
         album_dups: dict[str, list[MediaFile]] = EasyDict({})
         for _, dups in duplicates.items():
@@ -334,10 +350,10 @@ class DuplicateProcessor:
         """
         PU.info("Loading data from Navidrome database")
         with NavidromeDbConnection() as conn:
+            progress_total = len(dups_input.keys())
             progress: int = 0
             for key in dups_input.keys():
                 PU.log(f"[·] Processing duplicate {key}")
-                progress_total = len(dups_input.keys())
                 files = dups_input.get(key)
                 self.stats.duplicate_records += 1
                 self.data.media[key] = []
