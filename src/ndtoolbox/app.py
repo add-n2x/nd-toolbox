@@ -290,7 +290,7 @@ class DuplicateProcessor:
             if dups[0].folder is not None:
                 dups[0].folder.has_keepable = True
             self.stats.media_files_keepable += 1
-            PU.success(f"Chosen keepable: {dups[0].path}")
+            PU.log(SU.green(f"Chosen keepable: {dups[0].path}"))
             return dups[0]
         else:
             # Get the last item of the dups list:
@@ -502,8 +502,8 @@ class DuplicateProcessor:
         1. Media file holds a release year.
 
         """
-        PU.note(f"Compare {SU.gray(this.path)} <=> {SU.gray(that.path)}", 0)
-        PU.note(f"This folder: {SU.gray(this.folder)}, That folder: {SU.gray(that.folder)}")
+        PU.log(f"Compare {SU.gray(this.path)} <=> {SU.gray(that.path)}", 0)
+        PU.log(f"This folder: {SU.gray(this.folder)}, That folder: {SU.gray(that.folder)}")
 
         # Real album folder files are keepable over files in root, artist or dump folders
         left: Folder = this.folder
