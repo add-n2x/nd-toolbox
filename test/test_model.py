@@ -1,6 +1,5 @@
 """Test models."""
 
-import subprocess
 from typing import Generator
 
 import pytest
