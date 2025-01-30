@@ -140,7 +140,7 @@ class DuplicateProcessor:
         PU.ln()
         for _, dups in dup_folders.items():
             folder = FileUtil.get_folder(dups[0].path)
-            PU.info(f"\n{folder} " + SU.bold(f"[Album: {dups[0].album_name}]"))
+            PU.debug(f"\n{folder} " + SU.bold(f"[Album: {dups[0].album_name}]"))
             data[folder] = CommentedMap({})
             for dup in dups:
                 file = FileUtil.get_file(dup.path)
@@ -156,7 +156,7 @@ class DuplicateProcessor:
 
         # Store commands in yaml file for later execution
         yaml_file = os.path.join(config["data"].get(str), "commands.yaml")
-        self._generate_command_yaml(yaml_file)
+        self._generate_command_yaml(yaml_file, data)
 
         # Print stats
         PU.ln()
@@ -165,9 +165,8 @@ class DuplicateProcessor:
         PU.info(SU.underline(f"Total media files: {self.stats.media_files}".ljust(40, " ")))
         if self._has_errors():
             PU.error(f"Found {len(self.errors)} errors")
-        PU.success(
-            f"Stored delete commands to '{yaml_file}'.\nReview the file and comment out any files you want to keep."
-        )
+        PU.success(f"Stored delete commands to '{yaml_file}'.")
+        PU.note("Please review the file and comment out any DELETE operations you want to skip.")
         self.stats.stop()
         self.stats.print_duration()
 
@@ -447,7 +446,7 @@ class DuplicateProcessor:
         """Check if there are any errors in the processing."""
         return len(self.errors) > 0
 
-    def _generate_command_yaml(self, file_name):
+    def _generate_command_yaml(self, file_name, data):
         """
         Generate a YAML command file.
 
