@@ -19,7 +19,7 @@ from ruamel.yaml.comments import CommentedMap
 from ndtoolbox.config import config
 from ndtoolbox.db import NavidromeDb, NavidromeDbConnection
 from ndtoolbox.model import Annotation, Folder, MediaFile
-from ndtoolbox.utils import CLI, FileTools, FileUtil, PrintUtil, Stats
+from ndtoolbox.utils import CLI, FileTools, FileUtil, PrintUtil, ProgressBar, Stats
 from ndtoolbox.utils import PrintUtil as PU
 from ndtoolbox.utils import StringUtil as SU
 
@@ -92,13 +92,11 @@ class DuplicateProcessor:
         """
         self._load_navidrome_data_file()
         self.stats.start()
-        progress_total = self.stats.duplicate_files
         PU.bold("\nMerging and storing annotations for duplicate records")
         PU.ln()
 
-        progress: int = 0
-        # progress_total = len(dups)
-
+        total = self.stats.duplicate_files
+        progress = ProgressBar(total)
         with NavidromeDbConnection() as conn:
             for _, dups in self.data.media.items():
                 # Skip, if there are no duplicates left
@@ -113,10 +111,10 @@ class DuplicateProcessor:
                 self._merge_annotation_list(dups)
                 for media in dups:
                     self.db.store_annotation(media.annotation, conn)
-                    progress += 1
-                    PU.progress_bar(progress, progress_total)
-        PU.progress_done(progress_total)
-        PU.success(f"> Successfully updated annotations for {n} media files in the Navidrome database.")
+                progress.update()
+
+        progress.done()
+        PU.success(f"> Successfully updated annotations for {total} media files in the Navidrome database.")
         self.stats.stop()
         self.stats.print_duration()
 
@@ -127,29 +125,26 @@ class DuplicateProcessor:
         self._load_navidrome_data_file()
         self.stats.start()
 
-        progress_total = len(self.data.media.items())
-        progress: int = 0
-
+        total = len(self.data.media.items())
+        progress = ProgressBar(total)
         PU.bold("Evaluating deletable duplicates based on criteria")
         PU.ln()
         for _, dups in self.data.media.items():
             PU.debug(f"\n-> Evaluating {len(dups)} duplicates:")
             keepable = self._get_keepable_media(dups)
-            PU.debug(f"<- Found keepable: {keepable.path}", 0)
+            PU.debug(f"Found keepable: {keepable.path}", 0)
+            progress.update()
 
-            progress += len(dups)
-            PU.progress_bar(progress, progress_total)
-        PU.progress_done(progress_total)
+        progress.done()
         PU.ln()
-
-        progress_total = len(self.data.media.items())
-        progress: int = 0
 
         # Build the tree of deletable and keepable duplicates per album
         data = CommentedMap({})
         dup_folders = self._split_duplicates_by_album_folder(self.data.media)
         PU.ln()
         PU.note("Build tree of deletable and keepable duplicates per album")
+        total = len(self.data.media.items())
+        progress = ProgressBar(total)
 
         for _, dups in dup_folders.items():
             folder = FileUtil.get_folder(dups[0].path)
@@ -167,9 +162,8 @@ class DuplicateProcessor:
                     msg = SU.green(f"- KEEP   > {file}")
                 PU.debug(msg, 1)
 
-                progress += 1
-                PU.progress_bar(progress, progress_total)
-        PU.progress_done(progress_total)
+            progress.update()
+        progress.done()
 
         # Store commands in yaml file for later execution
         yaml_file = os.path.join(config["data"].get(str), "commands.yaml")
