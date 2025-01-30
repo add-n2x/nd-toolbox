@@ -388,7 +388,8 @@ class PrintUtil:
         """
         Moves the cursor to a specific line in the terminal.
 
-        :param line: Line number (1-based index).
+        Args:
+            line (int): Line number to move the cursor to. Starts at 0.
         """
         sys.stdout.write(f"\033[{line};0H")
         # sys.stdout.flush()
@@ -400,30 +401,49 @@ class PrintUtil:
         """
         sys.stdout.write("\033[K")
 
-    @staticmethod
-    def progress_bar(progress, total, length=80):
+
+class ProgressBar:
+    """Render a progress bar at the terminal."""
+
+    length: int
+    total: int
+    progress: int
+
+    def __init__(self, total: int, length: int = 80):
+        """
+        Init instance.
+
+        Args:
+            total (int): Total number of steps.
+            length (int): Length of the progress bar. Defaults to 80 characters.
+        """
+        self.length = length
+        self.total = total
+        self.progress = 0
+
+    def update(self, steps: int = 1):
         """
         Renders a progress bar at the last line of the terminal.
 
-        :param progress: Current progress (int).
-        :param total: Total value for completion (int).
-        :param length: Length of the progress bar (default is 50).
+        Args:
+           steps (int): Number of steps to advance the progress bar. Defaults to 1.
         """
+        self.progress += steps
         terminal_height = PrintUtil.get_terminal_height()
         PrintUtil.move_cursor_to_line(terminal_height)
         PrintUtil.clear_line()
-        percent = 100 * (progress / total)
-        bar_length = int(length * progress / total)
-        bar = "█" * bar_length + "·" * (length - bar_length)
+        percent = 100 * (self.progress / self.total)
+        bar_length = int(self.length * self.progress / self.total)
+        bar = "█" * bar_length + "·" * (self.length - bar_length)
         sys.stdout.write(StringUtil.green(f"|{bar}| {percent:.2f}%"))
         sys.stdout.flush()
 
-    @staticmethod
-    def progress_done(total):
+    def done(self):
         """
         Clears the progress bar and restores normal terminal behavior after completion.
         """
-        PrintUtil.progress_bar(100, 100)
+        self.progress = self.total
+        self.update(0)
         terminal_height = PrintUtil.get_terminal_height()
         PrintUtil.move_cursor_to_line(terminal_height)  # Move to the last line
         sys.stdout.write("\n\n")  # Move to the next line for normal printing
