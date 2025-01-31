@@ -1,6 +1,7 @@
-- [ ] Add Docker integration
+- [x] Add Docker integration
 - [ ] Add workflow to docs
-- [ ] Clone ratings and playcounts
-- [ ] Duplicate quality rating algorithm
-- [ ] Generate list of deletable duplicates
+- [x] Clone ratings and playcounts
+- [x] Duplicate quality rating algorithm
+- [x] Generate list of deletable duplicates
+- [ ] Implement a way to delete duplicates
 - [ ] BPM analysis and track tag updates
