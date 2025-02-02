@@ -134,7 +134,6 @@ class DuplicateProcessor:
             keepable = self._get_keepable_media(dups)
             PU.debug(f"Found keepable: {keepable.path}", 0)
             progress.update()
-
         progress.done()
         PU.ln()
 
@@ -161,7 +160,6 @@ class DuplicateProcessor:
                     data[folder][file] = None
                     msg = SU.green(f"- KEEP   > {file}")
                 PU.debug(msg, 1)
-
             progress.update()
         progress.done()
 
@@ -703,7 +701,7 @@ class DuplicateProcessor:
         # Skip, if they are the same
 
         # If no conditition matches, it doesn't matter which one we take
-        PU.warning(f"No condition matched, keeping this one ({this.path}), instead of that one ({that.path})")
+        PU.warning(f"No condition matched - keeping '{SU.green(this.path)}' over '{SU.red(that.path)}'")
         this.delete_reason = f"No reason, since no condition matched | {SU.gray(that.path)}"
         return that
 
