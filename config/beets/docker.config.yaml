@@ -21,3 +21,8 @@ duplicates:
   delete: no
   path: no
   group: no
+autobpm:
+  auto: yes
+  overwrite: no
+  beat_track_kwargs:
+    start_bpm: 160

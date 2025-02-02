@@ -12,7 +12,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-beets = "^2.2.0"
+beets = {extras = ["autobpm"], version = "^2.2.0"}
 python = "^3.13"
 python-dotenv = "^1.0.1"
 pytest-mock = "^3.14.0"
