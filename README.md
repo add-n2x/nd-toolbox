@@ -21,6 +21,16 @@ installation.
 > [!IMPORTANT]
 > This repository is work in progress. Features and documentation are not yet completed.
 
+## How does it work?
+
+In MusicBrainz, Track ID, Release ID, and Recording ID serve distinct purposes to organize music metadata precisely.
+
+| **ID Type**     | **Scope**                          | **Example Use Case**                              |
+|------------------|------------------------------------|---------------------------------------------------|
+| **Recording ID** | Unique audio performance           | Same studio track reused across multiple albums.  |
+| **Track ID**     | Track on a specific release medium | Track 3 on the 2001 CD vs. Track 3 on the 2020 LP.|
+| **Release ID**   | Entire album/release version       | Distinguishing between original and deluxe editions of an album. |
+
 ## Prerequisites
 
 - Docker
